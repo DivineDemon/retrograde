@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "typecheck": "tsc -b --noEmit",
+    "format": "biome format --write",
+    "lint": "biome check --write"
   },
   "dependencies": {
     "next": "16.2.0",

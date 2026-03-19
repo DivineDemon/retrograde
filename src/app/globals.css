@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Color primitives - Paper Retrograde Design */
+  --retro-color-bg: #f7f1e3;
+  --retro-color-ink: #1a1718;
+  --retro-color-magenta: #c90746;
+  --retro-color-cyan: #52e0d1;
+  --retro-color-yellow: #ffc83d;
+  --retro-color-white: #ffffff;
+
+  /* Font roles */
+  --font-sans: var(--font-noto-sans-jp);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bangers);
+  --font-pixel: var(--font-press-start-2p);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Semantic color roles */
+  --color-canvas: var(--retro-color-bg);
+  --color-ink: var(--retro-color-ink);
+  --color-magenta: var(--retro-color-magenta);
+  --color-cyan: var(--retro-color-cyan);
+  --color-yellow: var(--retro-color-yellow);
+  --color-surface-base: var(--retro-color-white);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Font roles */
+  --font-noto: var(--font-noto-sans-jp);
+  --font-press-start: var(--font-press-start-2p);
+  --font-bangers: var(--font-bangers);
+
+  /* Custom shadows */
+  --shadow-retro-lg: 10px 10px 0px var(--retro-color-ink);
+  --shadow-retro-md: 10px 10px 0px var(--retro-color-ink);
+  --shadow-retro-sm: 10px 10px 0px var(--retro-color-ink);
+  --shadow-retro-xs: 10px 10px 0px var(--retro-color-ink);
+
+  /* Custom borders */
+  --border-6: 6px;
+  --border-5: 5px;
+  --border-4: 4px;
+  --border-3: 3px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--retro-color-bg);
+  color: var(--retro-color-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
