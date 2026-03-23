@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Cart } from "../cart/cart";
 import MaxWidthWrapper from "../max-width-wrapper";
-import { Cart } from "./cart";
 
 export const Header = () => {
   return (
@@ -29,6 +29,12 @@ export const Header = () => {
           className="border-4 border-ink bg-yellow px-2 py-2 text-center font-press-start text-[10px] leading-4 text-ink no-underline sm:px-3 sm:py-[10px] sm:text-[11px] lg:px-[14px] lg:py-[12px] lg:text-[12px]"
         >
           MENU
+        </Link>
+        <Link
+          href="/orders"
+          className="border-4 border-ink bg-cyan px-2 py-2 text-center font-press-start text-[10px] leading-4 text-ink no-underline sm:px-3 sm:py-[10px] sm:text-[11px] lg:px-[14px] lg:py-[12px] lg:text-[12px]"
+        >
+          ORDERS
         </Link>
         <Cart />
       </div>

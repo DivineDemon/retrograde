@@ -2,11 +2,57 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import {
+  type AppliedOffer,
+  type OfferLineItem,
+  useCart,
+} from "../../lib/cart-store";
 import { Offer } from "../global/offer";
 import MaxWidthWrapper from "../max-width-wrapper";
 
-export const MangaStrip = () => {
+type MangaStripProps = {
+  offerId?: string;
+  offerName?: string;
+  offerImage?: string | null;
+  offerDescription?: string;
+  offerItems?: OfferLineItem[];
+  discountType?: string;
+  discountValue?: number;
+};
+
+export const MangaStrip = ({
+  offerId,
+  offerName,
+  offerImage,
+  offerDescription,
+  offerItems,
+  discountType,
+  discountValue,
+}: MangaStripProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { applyOffer } = useCart();
+
+  const handleAcceptOffer = () => {
+    if (!offerId || !offerItems?.length) {
+      setIsOpen(false);
+      return;
+    }
+    const resolvedDiscountType =
+      discountType === "FIXED_AMOUNT" ? "FIXED_AMOUNT" : "PERCENTAGE";
+    const offerMeta: AppliedOffer = {
+      id: offerId,
+      name: offerName ?? "LIMITED DROP",
+      description: offerDescription ?? "Unlock the active offer bundle.",
+      items: offerItems,
+      discountType: resolvedDiscountType,
+      discountValue:
+        typeof discountValue === "number" && Number.isFinite(discountValue)
+          ? Math.max(0, Math.floor(discountValue))
+          : 0,
+    };
+    applyOffer(offerMeta);
+    setIsOpen(false);
+  };
 
   return (
     <MaxWidthWrapper className="p-4 sm:p-6 lg:p-8">
@@ -24,7 +70,9 @@ export const MangaStrip = () => {
           POW!
         </p>
         <p className="max-w-[620px] font-press-start text-[10px] leading-[17px] lg:text-center tracking-[0.04em] text-ink sm:text-[11px] sm:leading-[18px]">
-          LIMITED DROP: 8-BIT CARAMEL CRUSH / COMBO SET WITH VINYL PLAYLIST QR
+          {offerName
+            ? `LIMITED OFFER: ${offerName}`
+            : "LIMITED OFFER: 8-BIT CARAMEL CRUSH / COMBO SET WITH VINYL PLAYLIST QR"}
         </p>
         <button
           type="button"
@@ -34,7 +82,14 @@ export const MangaStrip = () => {
           VIEW
         </button>
       </section>
-      <Offer isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <Offer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onAccept={handleAcceptOffer}
+        image={offerImage}
+        name={offerName}
+        items={offerItems}
+      />
     </MaxWidthWrapper>
   );
 };

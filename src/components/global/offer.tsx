@@ -1,13 +1,24 @@
 import { X } from "lucide-react";
 import Image from "next/image";
+import type { OfferLineItem } from "../../lib/cart-store";
 
 type OfferProps = {
   isOpen: boolean;
   onClose: () => void;
   onAccept?: () => void;
+  image?: string | null;
+  name?: string;
+  items?: OfferLineItem[];
 };
 
-export const Offer = ({ isOpen, onClose, onAccept }: OfferProps) => {
+export const Offer = ({
+  isOpen,
+  onClose,
+  onAccept,
+  image,
+  name,
+  items,
+}: OfferProps) => {
   if (!isOpen) return null;
 
   const handleAccept = () => {
@@ -42,20 +53,34 @@ export const Offer = ({ isOpen, onClose, onAccept }: OfferProps) => {
           <X className="size-full" />
         </button>
         <Image
-          src="/landing/limited-drop.png"
-          alt="Limited drop promo poster"
+          src={image ?? "/landing/limited-drop.png"}
+          alt={name ? `${name} poster` : "Limited drop promo poster"}
           width={800}
           height={800}
           className="h-auto w-full border-4 border-ink"
           priority
         />
-        <button
-          type="button"
-          className="w-fit absolute bottom-10 left-0 right-0 mx-auto cursor-pointer border-4 border-ink px-4 py-3 font-press-start shadow-retro-sm shadow-white bg-yellow text-[11px] leading-4 text-ink sm:text-[12px]"
-          onClick={handleAccept}
-        >
-          UNLOCK
-        </button>
+        <div className="w-full bg-ink/50 p-5 absolute bottom-0 left-0 right-0 text-white flex items-center justify-between">
+          <div className="flex flex-col gap-1 items-center justify-between flex-1 w-full">
+            <p className="w-full text-left font-press-start text-xs">
+              {name ?? "LIMITED DROP"}
+            </p>
+            {items && items.length > 0 ? (
+              <p className="w-full text-left font-press-start text-xs">
+                {items
+                  .map((item) => `${item.title} x${item.quantity}`)
+                  .join(" + ")}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className="w-fit cursor-pointer border-4 border-ink px-4 py-3 font-press-start bg-yellow text-[11px] leading-4 text-ink sm:text-[12px]"
+            onClick={handleAccept}
+          >
+            UNLOCK
+          </button>
+        </div>
       </div>
     </div>
   );

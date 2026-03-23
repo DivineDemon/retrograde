@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Retrograde
 
-## Getting Started
+Retrograde is a Next.js app with an integrated Elysia + Prisma API mounted under `/api`.
 
-First, run the development server:
+## Environment Variables
+
+Create a `.env` file in the project root.
+
+```bash
+DATABASE_URL="postgresql://<user>:<password>@<host>/<db>?sslmode=require"
+ADMIN_API_SECRET="<strong-random-secret>"
+# Origin only (no /api). Eden Treaty appends /api/... from the route tree.
+NEXT_PUBLIC_API_URL="http://localhost:3000"
+# Optional: RSC/server-side fetch base (defaults to http://localhost:3000)
+INTERNAL_API_URL="http://localhost:3000"
+```
+
+Notes:
+- `DATABASE_URL` and `ADMIN_API_SECRET` are required for order/admin API routes.
+- `NEXT_PUBLIC_API_URL` / `INTERNAL_API_URL` are optional and must be the **origin** (e.g. `http://localhost:3000`), not `.../api`. If you still use `.../api`, it is normalized automatically.
+- In the browser, when unset, the client uses `window.location.origin`.
+- `FRONTEND_ORIGIN` and `API_PORT` are only used by the optional standalone Elysia process (see below).
+
+## Install
+
+```bash
+npm install
+```
+
+## Database Setup
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate:dev
+npm run prisma:seed
+```
+
+For first-time local setup with seed in one command:
+
+```bash
+npm run prisma:migrate:dev:seed
+```
+
+## Run
+
+Start the full app (frontend + API) in one process:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Optional **standalone** Elysia process (same routes as `/api`, useful for debugging without Next):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run api:standalone
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Watch mode:
 
-## Learn More
+```bash
+npm run api:standalone:watch
+```
 
-To learn more about Next.js, take a look at the following resources:
+Requires `API_PORT` (defaults to `3001`) and `FRONTEND_ORIGIN` for CORS when hitting the API directly.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Integrated Smoke Checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Assuming Next dev is running on `http://localhost:3000`.
 
-## Deploy on Vercel
+1) Health:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+curl -i http://localhost:3000/api/health
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2) Public reads:
+
+```bash
+curl -i http://localhost:3000/api/menu
+curl -i http://localhost:3000/api/stats
+curl -i http://localhost:3000/api/offers/active
+```
+
+3) Admin auth guard:
+
+```bash
+# missing secret -> 401
+curl -i -X PUT http://localhost:3000/api/admin/stats \
+  -H 'content-type: application/json' \
+  --data '{"dailyCups":1,"vinylSpins":2,"arcade":3,"comboRate":4}'
+
+# wrong secret -> 403
+curl -i -X PUT http://localhost:3000/api/admin/stats \
+  -H 'x-admin-secret: wrong-secret' \
+  -H 'content-type: application/json' \
+  --data '{"dailyCups":1,"vinylSpins":2,"arcade":3,"comboRate":4}'
+
+# correct secret -> 200
+curl -i -X PUT http://localhost:3000/api/admin/stats \
+  -H "x-admin-secret: ${ADMIN_API_SECRET}" \
+  -H 'content-type: application/json' \
+  --data '{"dailyCups":1,"vinylSpins":2,"arcade":3,"comboRate":4}'
+```
+
+Expected behavior:
+- `GET /api/health` returns 200 with `status: "ok"`.
+- `GET /api/menu` returns 200 with an array (possibly empty before seed/sync).
+- `GET /api/stats` returns 200 and creates default singleton row if missing.
+- `GET /api/offers/active` returns 200 when an active offer exists, otherwise 404.
+- Admin endpoints reject missing/invalid `x-admin-secret` with 401/403.

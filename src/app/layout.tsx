@@ -7,9 +7,12 @@ import {
   Press_Start_2P,
 } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 import { Footer } from "@/components/global/footer";
 import { Header } from "@/components/global/header";
+import { CartProvider } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
+import "sonner/dist/styles.css";
 
 const bangers = Bangers({
   weight: "400",
@@ -66,9 +69,12 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        <Header />
-        {children}
-        <Footer />
+        <CartProvider>
+          <Header />
+          {children}
+          <Footer />
+          <Toaster richColors closeButton />
+        </CartProvider>
       </body>
     </html>
   );

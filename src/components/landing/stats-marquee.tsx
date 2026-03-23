@@ -1,13 +1,26 @@
 import Image from "next/image";
-import { stats } from "@/lib/constants";
+import { getStats } from "@/lib/api/server";
 import { cn } from "@/lib/utils";
 import MaxWidthWrapper from "../max-width-wrapper";
 
-export const StatsMarquee = () => {
+const statMeta = [
+  {
+    label: "DAILY CUPS",
+    key: "dailyCups" as const,
+    valueColor: "text-magenta",
+  },
+  { label: "VINYL SPINS", key: "vinylSpins" as const, valueColor: "text-ink" },
+  { label: "ARCADE", key: "arcade" as const, valueColor: "text-ink" },
+  { label: "COMBO RATE", key: "comboRate" as const, valueColor: "text-ink" },
+];
+
+export const StatsMarquee = async () => {
+  const stats = await getStats();
+
   return (
     <MaxWidthWrapper className="relative p-4 sm:p-6 lg:p-8">
       <div className="grid w-full grid-cols-2 gap-4 md:gap-8 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {statMeta.map((stat) => (
           <div
             key={stat.label}
             className="shadow-retro-sm flex flex-col gap-3 border-6 border-ink p-4 sm:p-[18px]"
@@ -21,7 +34,9 @@ export const StatsMarquee = () => {
                 "font-bangers text-[40px] leading-[40px] sm:text-[46px] sm:leading-[46px] md:text-[52px] md:leading-[52px]",
               )}
             >
-              {stat.value}
+              {stat.key === "comboRate"
+                ? `${stats?.comboRate ?? 0}%`
+                : Intl.NumberFormat("en-US").format(stats?.[stat.key] ?? 0)}
             </div>
           </div>
         ))}

@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MenuCategory {
+  SIGNATURE
+  COLD_BREW
+  DESSERT
+  ESPRESSO
+  FILTER
+  NON_COFFEE
+  BAKERY
+  SAVORY
+  BREAKFAST
+}
+
+enum Currency {
+  JPY
+}
+
+enum PaymentMode {
+  CARD_ON_DELIVERY
+  CASH_ON_DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  title       String
+  description String
+  priceMinor  Int
+  currency    Currency     @default(JPY)
+  category    MenuCategory
+  cardColor   String?
+  titleColor  String?
+  isFeatured  Boolean      @default(false)
+  isMostPopular Boolean    @default(false)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  orderItems  OrderItem[]
+  offerItems  LimitedOfferItem[]
+
+  @@index([category, isActive])
+  @@index([isFeatured])
+  @@index([isMostPopular])
+  @@index([isActive])
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  status         OrderStatus  @default(PENDING)
+  paymentMode    PaymentMode
+  subtotalMinor  Int
+  discountMinor  Int          @default(0)
+  totalMinor     Int
+  currency       Currency     @default(JPY)
+
+  customerName   String
+  customerPhone  String
+  streetAddress  String
+  city           String
+  addressNotes   String?
+
+  guestId        String?
+  limitedOfferId String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  items          OrderItem[]
+  limitedOffer   LimitedOffer? @relation(fields: [limitedOfferId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([guestId, createdAt])
+}
+
+model CustomerProfile {
+  id            String   @id @default(cuid())
+  guestId       String   @unique
+  customerName  String
+  customerPhone String
+  streetAddress String
+  city          String
+  addressNotes  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model OrderItem {
+  id                String    @id @default(cuid())
+  orderId           String
+  menuItemId        String?
+  menuItemSlug      String
+  menuItemTitle     String
+  unitPriceMinor    Int
+  quantity          Int
+  lineTotalMinor    Int
+  createdAt         DateTime  @default(now())
+
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem          MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
+model Stats {
+  id          String   @id @default("singleton")
+  dailyCups   Int      @default(0)
+  vinylSpins  Int      @default(0)
+  arcade      Int      @default(0)
+  comboRate   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LimitedOffer {
+  id                String            @id @default(cuid())
+  name              String
+  description       String
+  image             String?
+  availabilityStart DateTime
+  availabilityEnd   DateTime?
+  isActive          Boolean           @default(false)
+  discountType      DiscountType
+  discountValue     Int
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  items             LimitedOfferItem[]
+  orders            Order[]
+
+  @@index([isActive])
+  @@index([availabilityStart, availabilityEnd])
+}
+
+model LimitedOfferItem {
+  id             String       @id @default(cuid())
+  limitedOfferId String
+  menuItemId     String
+  quantity       Int          @default(1)
+  createdAt      DateTime     @default(now())
+
+  limitedOffer   LimitedOffer @relation(fields: [limitedOfferId], references: [id], onDelete: Cascade)
+  menuItem       MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@unique([limitedOfferId, menuItemId])
+  @@index([menuItemId])
+}

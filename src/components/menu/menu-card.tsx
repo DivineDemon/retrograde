@@ -1,11 +1,16 @@
-import type { MenuItem } from "@/lib/constants";
+"use client";
+
+import type { MenuItemDto } from "@/lib/api/types";
+import { useCart } from "@/lib/cart-store";
 import { cn, formatMenuPriceYen } from "@/lib/utils";
 
-export default function MenuCard({ card }: { card: MenuItem }) {
+export default function MenuCard({ card }: { card: MenuItemDto }) {
+  const { addItem } = useCart();
+
   return (
     <div
       className={cn(
-        card.color,
+        card.cardColor,
         "shadow-retro-sm flex h-fit flex-col gap-3 border-6 border-ink p-4 sm:p-[18px]",
       )}
     >
@@ -25,11 +30,18 @@ export default function MenuCard({ card }: { card: MenuItem }) {
       </div>
       <div className="flex items-center justify-between border-t-4 border-ink pt-[10px]">
         <div className="font-press-start text-[11px] leading-4 text-ink sm:text-[12px]">
-          {formatMenuPriceYen(Number(card.price.replace("¥", "")))}
+          {formatMenuPriceYen(card.priceMinor)}
         </div>
         <button
           type="button"
           className="cursor-pointer border-3 border-ink bg-yellow px-[10px] py-[8px] font-press-start text-[11px] leading-4 text-ink sm:text-[12px]"
+          onClick={() =>
+            addItem({
+              id: card.id,
+              title: card.title,
+              price: card.priceMinor,
+            })
+          }
         >
           ADD +1
         </button>
