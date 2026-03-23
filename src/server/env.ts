@@ -1,6 +1,11 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { loadEnvFile } from "node:process";
 
-loadEnvFile();
+const envFilePath = join(process.cwd(), ".env");
+if (existsSync(envFilePath)) {
+  loadEnvFile(envFilePath);
+}
 
 const DEFAULT_API_PORT = 3001;
 const DEFAULT_FRONTEND_ORIGIN = "http://localhost:3000";
