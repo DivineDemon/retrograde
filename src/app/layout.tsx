@@ -7,6 +7,8 @@ import {
   Press_Start_2P,
 } from "next/font/google";
 import "./globals.css";
+import { Footer } from "@/components/global/footer";
+import { Header } from "@/components/global/header";
 import { cn } from "@/lib/utils";
 
 const bangers = Bangers({
@@ -63,7 +65,11 @@ export default function RootLayout({
         "h-full antialiased",
       )}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Header />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

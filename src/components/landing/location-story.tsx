@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import MaxWidthWrapper from "../max-width-wrapper";
 
 export const LocationStory = () => {
@@ -23,21 +24,21 @@ export const LocationStory = () => {
           RETROGRADE HQ
         </p>
         <p className="font-noto text-base leading-7 text-ink sm:text-lg">
-          2-11-9 Dogenzaka, Shibuya-ku, Tokyo
+          5 L, Block L Gulberg 2, Lahore, 54660, Pakistan
         </p>
         <div className="border-t-4 border-ink pt-3">
           <p className="whitespace-pre-wrap font-press-start text-[10px] leading-[17px] text-ink sm:text-[11px] sm:leading-[18px]">
-            WEEKDAYS 07:00-22:00
+            08:00AM-12:00AM
             <br />
-            WEEKENDS 08:00-24:00
+            DAILY, NO EXCEPTIONS
           </p>
         </div>
-        <button
-          type="button"
+        <Link
+          href="https://www.google.com/maps/place/Retrograde+Coffee+-+Gulberg/@31.5200515,74.3463278,17z/data=!3m1!4b1!4m6!3m5!1s0x3919055116e42c0d:0xfed728ebcf47be89!8m2!3d31.520047!4d74.3489027!16s%2Fg%2F11n3kztsrs?entry=ttu&g_ep=EgoyMDI2MDMxOC4xIKXMDSoASAFQAw%3D%3D"
           className="mt-auto w-fit cursor-pointer border-4 border-ink bg-cyan px-[12px] py-[10px] font-press-start text-[11px] leading-4 text-ink sm:px-[14px] sm:py-3 sm:text-[12px]"
         >
           GET DIRECTIONS
-        </button>
+        </Link>
       </div>
       <div className="pointer-events-none absolute -bottom-20 right-6 z-10 hidden h-[154px] w-[154px] border-6 border-ink bg-canvas shadow-retro-sm lg:block xl:right-24">
         <Image

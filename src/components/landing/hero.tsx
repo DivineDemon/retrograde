@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import MaxWidthWrapper from "../max-width-wrapper";
 
 const CTA_BUTTON_CLASS =
@@ -21,28 +23,23 @@ export const Hero = () => {
           arcade-era energy into hand-pulled espresso and electric pour-over
           rituals.
         </p>
-        <div className="flex w-full flex-wrap items-center gap-3 sm:gap-4">
-          <button type="button" className={`${CTA_BUTTON_CLASS} bg-magenta`}>
-            START ORDER
-          </button>
-          <button type="button" className={`${CTA_BUTTON_CLASS} bg-white`}>
-            VIEW MENU
-          </button>
-        </div>
+        <Link href="/menu" className={cn(CTA_BUTTON_CLASS, "bg-cyan w-fit")}>
+          VIEW MENU
+        </Link>
       </div>
       <div className="mt-4 flex w-full flex-col gap-[10px] border-6 border-ink bg-white p-4 shadow-retro-lg sm:mt-6 sm:p-5 lg:absolute lg:right-10 lg:top-10 lg:mt-0 lg:w-[420px] lg:-rotate-2">
         <div className="font-press-start text-[10px] leading-[14px] text-ink sm:text-[11px]">
           NOW BREWING
         </div>
         <div className="font-bangers text-[44px] leading-[44px] text-magenta sm:text-[52px] sm:leading-[52px] md:text-[58px] md:leading-[58px]">
-          PIXEL LATTE
+          PIXEL CHEESECAKE
         </div>
         <p className="font-noto text-[15px] leading-6 text-ink sm:text-base">
-          Single-origin shot + sakura cream + glitch cocoa dust.
+          Baked vanilla cheesecake with berry coulis and crumbs.
         </p>
         <div className="flex items-center justify-between border-t-4 border-ink pt-[10px]">
           <div className="font-press-start text-[11px] leading-4 text-ink sm:text-[12px]">
-            ¥690
+            ¥620
           </div>
           <button
             type="button"

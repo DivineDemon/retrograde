@@ -1,7 +1,13 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
+import { Offer } from "../global/offer";
 import MaxWidthWrapper from "../max-width-wrapper";
 
 export const MangaStrip = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <MaxWidthWrapper className="p-4 sm:p-6 lg:p-8">
       <section className="relative z-10 flex w-full flex-col gap-4 md:gap-8 border-6 border-ink bg-yellow px-4 py-4 shadow-retro-md sm:px-5 sm:py-5 md:flex-row md:items-center md:justify-between lg:px-6">
@@ -23,10 +29,12 @@ export const MangaStrip = () => {
         <button
           type="button"
           className="w-fit shrink-0 cursor-pointer border-4 border-ink bg-white px-[12px] py-[10px] font-press-start text-[11px] leading-4 text-ink sm:px-[14px] sm:py-[12px] sm:text-[12px]"
+          onClick={() => setIsOpen(true)}
         >
-          UNLOCK
+          VIEW
         </button>
       </section>
+      <Offer isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </MaxWidthWrapper>
   );
 };
