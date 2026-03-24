@@ -1,24 +1,7 @@
 import { Elysia, t } from "elysia";
 import { PaymentMode } from "@/generated/prisma/enums";
+import { createOrderBody } from "@/lib/form-schemas";
 import { prisma } from "@/server/lib/prisma";
-
-const createOrderBody = t.Object({
-  items: t.Array(
-    t.Object({
-      menuItemId: t.String(),
-      quantity: t.Integer({ minimum: 1 }),
-    }),
-    { minItems: 1 },
-  ),
-  paymentMode: t.String(),
-  guestId: t.Optional(t.String()),
-  limitedOfferId: t.Optional(t.String()),
-  customerName: t.String({ minLength: 1 }),
-  customerPhone: t.String({ minLength: 1 }),
-  streetAddress: t.String({ minLength: 1 }),
-  city: t.String({ minLength: 1 }),
-  addressNotes: t.Optional(t.String()),
-});
 
 const orderItemResponse = t.Object({
   id: t.String(),

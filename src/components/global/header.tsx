@@ -1,9 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { Cart } from "../cart/cart";
 import MaxWidthWrapper from "../max-width-wrapper";
+import { buttonVariants } from "../ui/button";
 
 export const Header = () => {
+  const headerActionClass =
+    "font-press-start text-[10px] sm:text-[11px] lg:text-[12px]";
+
+  const navLinkClass = cn(
+    buttonVariants({ variant: "retro" }),
+    headerActionClass,
+    "text-ink no-underline",
+  );
+
   return (
     <header className="sticky top-0 z-50 w-full border-b-6 bg-canvas">
       <MaxWidthWrapper className="flex w-full flex-col gap-4 p-4 sm:p-6 md:flex-row md:items-center md:justify-between lg:p-8">
@@ -25,19 +36,13 @@ export const Header = () => {
           </div>
         </Link>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <Link
-            href="/menu"
-            className="border-4 border-ink bg-yellow px-2 py-2 text-center font-press-start text-[10px] leading-4 text-ink no-underline sm:px-3 sm:py-[10px] sm:text-[11px] lg:px-[14px] lg:py-[12px] lg:text-[12px]"
-          >
+          <Link href="/menu" className={cn(navLinkClass, "bg-yellow")}>
             MENU
           </Link>
-          <Link
-            href="/orders"
-            className="border-4 border-ink bg-cyan px-2 py-2 text-center font-press-start text-[10px] leading-4 text-ink no-underline sm:px-3 sm:py-[10px] sm:text-[11px] lg:px-[14px] lg:py-[12px] lg:text-[12px]"
-          >
+          <Link href="/orders" className={cn(navLinkClass, "bg-cyan")}>
             ORDERS
           </Link>
-          <Cart />
+          <Cart triggerClassName={headerActionClass} />
         </div>
       </MaxWidthWrapper>
     </header>

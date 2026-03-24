@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { guestAddressBody } from "@/lib/form-schemas";
 import { prisma } from "@/server/lib/prisma";
 
 const guestAddressResponse = t.Object({
@@ -133,13 +134,7 @@ export const guestRoutes = new Elysia({ prefix: "/guest" })
     },
     {
       params: t.Object({ guestId: t.String({ minLength: 1 }) }),
-      body: t.Object({
-        customerName: t.String({ minLength: 1 }),
-        customerPhone: t.String({ minLength: 1 }),
-        streetAddress: t.String({ minLength: 1 }),
-        city: t.String({ minLength: 1 }),
-        addressNotes: t.Optional(t.String()),
-      }),
+      body: guestAddressBody,
       response: guestAddressResponse,
     },
   );

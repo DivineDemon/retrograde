@@ -1,24 +1,40 @@
 "use client";
 
+import { typeboxResolver } from "@hookform/resolvers/typebox";
 import { useEffect, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldContent,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api/client";
-import { cn } from "@/lib/utils";
+import {
+  type CheckoutPaymentFormBody,
+  type CustomerAddressBody,
+  checkoutPaymentFormBody,
+} from "@/lib/form-schemas";
 import type { CartLineItem } from "../../lib/cart-store";
 
-export type CheckoutAddressFormValues = {
-  customerName: string;
-  customerPhone: string;
-  streetAddress: string;
-  city: string;
-  addressNotes: string;
-};
-
-type CheckoutField =
-  | "customerName"
-  | "customerPhone"
-  | "streetAddress"
-  | "city";
+export type { CheckoutPaymentFormBody };
 
 type GuestAddressResponse = {
   guestId: string;
@@ -29,19 +45,10 @@ type GuestAddressResponse = {
   addressNotes: string | null;
 };
 
-type PaymentMode = "card-on-delivery" | "cash-on-delivery";
-
 const PAYMENT_MODE_TO_API = {
   "card-on-delivery": "CARD_ON_DELIVERY",
   "cash-on-delivery": "CASH_ON_DELIVERY",
 } as const;
-
-const FIELD_LABELS: Record<CheckoutField, string> = {
-  customerName: "Name",
-  customerPhone: "Phone",
-  streetAddress: "Street address",
-  city: "City",
-};
 
 type CheckoutPaymentModalProps = {
   isOpen: boolean;
@@ -60,20 +67,20 @@ export const CheckoutPaymentModal = ({
 }: CheckoutPaymentModalProps) => {
   const [guestId, setGuestId] = useState<string | null>(null);
   const hasPrefilledAddressRef = useRef(false);
-  const [formValues, setFormValues] = useState<CheckoutAddressFormValues>({
-    customerName: "",
-    customerPhone: "",
-    streetAddress: "",
-    city: "",
-    addressNotes: "",
-  });
-  const [formErrors, setFormErrors] = useState<
-    Partial<Record<CheckoutField, string>>
-  >({});
   const [isLoadingGuestProfile, setIsLoadingGuestProfile] = useState(false);
-  const [paymentMode, setPaymentMode] =
-    useState<PaymentMode>("card-on-delivery");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<CheckoutPaymentFormBody>({
+    resolver: typeboxResolver(checkoutPaymentFormBody),
+    defaultValues: {
+      customerName: "",
+      customerPhone: "",
+      streetAddress: "",
+      city: "",
+      addressNotes: "",
+      paymentMode: "card-on-delivery",
+    },
+  });
 
   useEffect(() => {
     if (!isOpen) {
@@ -86,23 +93,7 @@ export const CheckoutPaymentModal = ({
       return;
     }
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        if (!isSubmitting) {
-          onClose();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [isOpen, isSubmitting, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    hasPrefilledAddressRef.current = false;
 
     let cancelled = false;
 
@@ -130,21 +121,16 @@ export const CheckoutPaymentModal = ({
 
         const addressData =
           (await addressResponse.json()) as GuestAddressResponse;
-        setFormValues((previous) => {
-          if (hasPrefilledAddressRef.current) {
-            return previous;
-          }
-          return {
-            customerName:
-              previous.customerName || addressData.customerName || "",
-            customerPhone:
-              previous.customerPhone || addressData.customerPhone || "",
-            streetAddress:
-              previous.streetAddress || addressData.streetAddress || "",
-            city: previous.city || addressData.city || "",
-            addressNotes:
-              previous.addressNotes || addressData.addressNotes || "",
-          };
+        if (hasPrefilledAddressRef.current) {
+          return;
+        }
+        form.reset({
+          customerName: addressData.customerName || "",
+          customerPhone: addressData.customerPhone || "",
+          streetAddress: addressData.streetAddress || "",
+          city: addressData.city || "",
+          addressNotes: addressData.addressNotes ?? "",
+          paymentMode: "card-on-delivery",
         });
         hasPrefilledAddressRef.current = true;
       } catch {
@@ -161,36 +147,12 @@ export const CheckoutPaymentModal = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, form.reset]);
 
-  const onFormValueChange = (
-    field: keyof CheckoutAddressFormValues,
-    value: string,
+  const saveGuestAddress = async (
+    activeGuestId: string,
+    values: CustomerAddressBody,
   ) => {
-    setFormValues((previous) => ({ ...previous, [field]: value }));
-    if (field in FIELD_LABELS) {
-      const checkoutField = field as CheckoutField;
-      if (formErrors[checkoutField]) {
-        setFormErrors((previous) => ({
-          ...previous,
-          [checkoutField]: undefined,
-        }));
-      }
-    }
-  };
-
-  const validateForm = () => {
-    const nextErrors: Partial<Record<CheckoutField, string>> = {};
-    (Object.keys(FIELD_LABELS) as CheckoutField[]).forEach((field) => {
-      if (!formValues[field].trim()) {
-        nextErrors[field] = `${FIELD_LABELS[field]} is required`;
-      }
-    });
-    setFormErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const saveGuestAddress = async (activeGuestId: string) => {
     try {
       await fetch(`/api/guest/${encodeURIComponent(activeGuestId)}/address`, {
         method: "PUT",
@@ -198,11 +160,11 @@ export const CheckoutPaymentModal = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customerName: formValues.customerName.trim(),
-          customerPhone: formValues.customerPhone.trim(),
-          streetAddress: formValues.streetAddress.trim(),
-          city: formValues.city.trim(),
-          addressNotes: formValues.addressNotes.trim() || "",
+          customerName: values.customerName.trim(),
+          customerPhone: values.customerPhone.trim(),
+          streetAddress: values.streetAddress.trim(),
+          city: values.city.trim(),
+          addressNotes: values.addressNotes?.trim() || "",
         }),
       });
     } catch {
@@ -210,13 +172,8 @@ export const CheckoutPaymentModal = ({
     }
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = form.handleSubmit(async (values) => {
     if (items.length === 0 || isSubmitting) {
-      return;
-    }
-
-    const isValid = validateForm();
-    if (!isValid) {
       return;
     }
 
@@ -240,14 +197,14 @@ export const CheckoutPaymentModal = ({
           menuItemId: item.id,
           quantity: item.quantity,
         })),
-        paymentMode: PAYMENT_MODE_TO_API[paymentMode],
+        paymentMode: PAYMENT_MODE_TO_API[values.paymentMode],
         guestId: activeGuestId ?? undefined,
         limitedOfferId: appliedOfferId ?? undefined,
-        customerName: formValues.customerName.trim(),
-        customerPhone: formValues.customerPhone.trim(),
-        streetAddress: formValues.streetAddress.trim(),
-        city: formValues.city.trim(),
-        addressNotes: formValues.addressNotes.trim() || undefined,
+        customerName: values.customerName.trim(),
+        customerPhone: values.customerPhone.trim(),
+        streetAddress: values.streetAddress.trim(),
+        city: values.city.trim(),
+        addressNotes: values.addressNotes?.trim() || undefined,
       };
 
       const response = await apiClient.api.orders.post(payload);
@@ -263,7 +220,13 @@ export const CheckoutPaymentModal = ({
       }
 
       if (activeGuestId) {
-        await saveGuestAddress(activeGuestId);
+        await saveGuestAddress(activeGuestId, {
+          customerName: values.customerName,
+          customerPhone: values.customerPhone,
+          streetAddress: values.streetAddress,
+          city: values.city,
+          addressNotes: values.addressNotes,
+        });
       }
 
       toast.success(
@@ -275,188 +238,216 @@ export const CheckoutPaymentModal = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  if (!isOpen) {
-    return null;
-  }
+  });
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close checkout"
-        className="fixed inset-0 z-60 bg-ink/40 transition-opacity duration-200"
-        onClick={() => {
-          if (!isSubmitting) {
-            onClose();
-          }
-        }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Checkout"
-        className={cn(
-          "fixed left-1/2 top-1/2 z-61 max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto border-4 border-ink bg-cyan p-4 shadow-retro-sm sm:p-5",
-        )}
+    <Dialog
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !isSubmitting) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        variant="retro"
+        showCloseButton={false}
+        className="max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto border-4 border-ink bg-cyan p-4 text-ink sm:max-w-2xl sm:p-5"
       >
+        <DialogTitle className="sr-only">Checkout</DialogTitle>
+        <DialogDescription className="sr-only">
+          Enter delivery details and choose payment mode.
+        </DialogDescription>
         <div className="flex items-center justify-between gap-3 border-b-4 border-ink pb-3">
           <p className="font-press-start text-[11px] leading-4 text-ink">
             CHECKOUT
           </p>
-          <button
+          <Button
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="shrink-0 border-4 border-ink bg-white px-3 py-2 font-press-start text-[10px] leading-4 text-ink disabled:opacity-50"
+            variant="retro"
+            className="h-auto shrink-0 border-4 bg-white px-3 py-2 leading-4 disabled:opacity-50"
           >
             CLOSE
-          </button>
+          </Button>
         </div>
 
-        <div className="mt-4 border-4 border-ink bg-yellow p-4">
-          <div className="grid grid-cols-1 gap-2">
-            <label className="flex flex-col gap-1">
-              <span className="font-press-start text-[9px] leading-4 text-ink">
-                NAME *
-              </span>
-              <input
-                type="text"
-                value={formValues.customerName}
-                onChange={(event) =>
-                  onFormValueChange("customerName", event.target.value)
-                }
-                disabled={isSubmitting}
-                className="w-full border-2 border-ink bg-white px-2 py-2 font-press-start text-[10px] leading-4 text-ink disabled:opacity-50"
-              />
-              {formErrors.customerName ? (
-                <span className="font-press-start text-[8px] leading-4 text-red-700">
-                  {formErrors.customerName}
-                </span>
-              ) : null}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="font-press-start text-[9px] leading-4 text-ink">
-                PHONE *
-              </span>
-              <input
-                type="tel"
-                value={formValues.customerPhone}
-                onChange={(event) =>
-                  onFormValueChange("customerPhone", event.target.value)
-                }
-                disabled={isSubmitting}
-                className="w-full border-2 border-ink bg-white px-2 py-2 font-press-start text-[10px] leading-4 text-ink disabled:opacity-50"
-              />
-              {formErrors.customerPhone ? (
-                <span className="font-press-start text-[8px] leading-4 text-red-700">
-                  {formErrors.customerPhone}
-                </span>
-              ) : null}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="font-press-start text-[9px] leading-4 text-ink">
-                STREET ADDRESS *
-              </span>
-              <input
-                type="text"
-                value={formValues.streetAddress}
-                onChange={(event) =>
-                  onFormValueChange("streetAddress", event.target.value)
-                }
-                disabled={isSubmitting}
-                className="w-full border-2 border-ink bg-white px-2 py-2 font-press-start text-[10px] leading-4 text-ink disabled:opacity-50"
-              />
-              {formErrors.streetAddress ? (
-                <span className="font-press-start text-[8px] leading-4 text-red-700">
-                  {formErrors.streetAddress}
-                </span>
-              ) : null}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="font-press-start text-[9px] leading-4 text-ink">
-                CITY *
-              </span>
-              <input
-                type="text"
-                value={formValues.city}
-                onChange={(event) =>
-                  onFormValueChange("city", event.target.value)
-                }
-                disabled={isSubmitting}
-                className="w-full border-2 border-ink bg-white px-2 py-2 font-press-start text-[10px] leading-4 text-ink disabled:opacity-50"
-              />
-              {formErrors.city ? (
-                <span className="font-press-start text-[8px] leading-4 text-red-700">
-                  {formErrors.city}
-                </span>
-              ) : null}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="font-press-start text-[9px] leading-4 text-ink">
-                ADDRESS NOTES
-              </span>
-              <textarea
-                value={formValues.addressNotes}
-                onChange={(event) =>
-                  onFormValueChange("addressNotes", event.target.value)
-                }
-                rows={2}
-                disabled={isSubmitting}
-                className="w-full resize-none border-2 border-ink bg-white px-2 py-2 font-press-start text-[10px] leading-4 text-ink disabled:opacity-50"
-              />
-            </label>
-            {isLoadingGuestProfile ? (
-              <p className="font-press-start text-[8px] leading-4 text-ink">
-                Loading saved address...
-              </p>
-            ) : null}
-          </div>
-        </div>
+        <form className="contents" onSubmit={handlePlaceOrder} noValidate>
+          <div className="mt-4 border-4 border-ink bg-yellow p-4">
+            <div className="grid grid-cols-1 gap-2">
+              <Field>
+                <FieldLabel
+                  htmlFor="checkout-customer-name"
+                  className="font-press-start text-[9px] leading-4 text-ink"
+                >
+                  NAME *
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="checkout-customer-name"
+                    type="text"
+                    {...form.register("customerName")}
+                    disabled={isSubmitting}
+                    variant="retro"
+                    className="h-auto border-2 bg-white py-2 leading-4 disabled:opacity-50"
+                  />
+                  <FieldError
+                    className="font-press-start text-[8px] leading-4 text-red-700"
+                    errors={[form.formState.errors.customerName]}
+                  />
+                </FieldContent>
+              </Field>
 
-        <div className="mt-4 border-4 border-ink bg-yellow p-4">
-          <p className="font-press-start text-[10px] leading-4 text-ink">
-            PAYMENT MODE (On Delivery Only)
-          </p>
-          <div className="mt-3 flex w-full items-center gap-2">
-            <label className="flex w-full cursor-pointer items-center gap-2 border-2 border-ink bg-white px-3 py-2">
-              <input
-                type="radio"
-                name="checkout-payment-mode"
-                value="card-on-delivery"
-                checked={paymentMode === "card-on-delivery"}
-                onChange={() => setPaymentMode("card-on-delivery")}
-                disabled={isSubmitting}
-              />
-              <span className="font-press-start text-[10px] leading-4 text-ink">
-                Card
-              </span>
-            </label>
-            <label className="flex w-full cursor-pointer items-center gap-2 border-2 border-ink bg-white px-3 py-2">
-              <input
-                type="radio"
-                name="checkout-payment-mode"
-                value="cash-on-delivery"
-                checked={paymentMode === "cash-on-delivery"}
-                onChange={() => setPaymentMode("cash-on-delivery")}
-                disabled={isSubmitting}
-              />
-              <span className="font-press-start text-[10px] leading-4 text-ink">
-                Cash
-              </span>
-            </label>
+              <Field>
+                <FieldLabel
+                  htmlFor="checkout-customer-phone"
+                  className="font-press-start text-[9px] leading-4 text-ink"
+                >
+                  PHONE *
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="checkout-customer-phone"
+                    type="tel"
+                    {...form.register("customerPhone")}
+                    disabled={isSubmitting}
+                    variant="retro"
+                    className="h-auto border-2 bg-white py-2 leading-4 disabled:opacity-50"
+                  />
+                  <FieldError
+                    className="font-press-start text-[8px] leading-4 text-red-700"
+                    errors={[form.formState.errors.customerPhone]}
+                  />
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel
+                  htmlFor="checkout-street-address"
+                  className="font-press-start text-[9px] leading-4 text-ink"
+                >
+                  STREET ADDRESS *
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="checkout-street-address"
+                    type="text"
+                    {...form.register("streetAddress")}
+                    disabled={isSubmitting}
+                    variant="retro"
+                    className="h-auto border-2 bg-white py-2 leading-4 disabled:opacity-50"
+                  />
+                  <FieldError
+                    className="font-press-start text-[8px] leading-4 text-red-700"
+                    errors={[form.formState.errors.streetAddress]}
+                  />
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel
+                  htmlFor="checkout-city"
+                  className="font-press-start text-[9px] leading-4 text-ink"
+                >
+                  CITY *
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="checkout-city"
+                    type="text"
+                    {...form.register("city")}
+                    disabled={isSubmitting}
+                    variant="retro"
+                    className="h-auto border-2 bg-white py-2 leading-4 disabled:opacity-50"
+                  />
+                  <FieldError
+                    className="font-press-start text-[8px] leading-4 text-red-700"
+                    errors={[form.formState.errors.city]}
+                  />
+                </FieldContent>
+              </Field>
+
+              <Field>
+                <FieldLabel
+                  htmlFor="checkout-address-notes"
+                  className="font-press-start text-[9px] leading-4 text-ink"
+                >
+                  ADDRESS NOTES
+                </FieldLabel>
+                <FieldContent>
+                  <Textarea
+                    id="checkout-address-notes"
+                    {...form.register("addressNotes")}
+                    rows={2}
+                    disabled={isSubmitting}
+                    variant="retro"
+                    className="resize-none border-2 border-ink bg-white disabled:opacity-50"
+                  />
+                  <FieldError
+                    className="font-press-start text-[8px] leading-4 text-red-700"
+                    errors={[form.formState.errors.addressNotes]}
+                  />
+                </FieldContent>
+              </Field>
+
+              {isLoadingGuestProfile ? (
+                <p className="font-press-start text-[8px] leading-4 text-ink">
+                  Loading saved address...
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
-        <button
-          type="button"
-          disabled={items.length === 0 || isSubmitting}
-          onClick={handlePlaceOrder}
-          className="mt-4 w-full border-4 border-ink bg-magenta px-4 py-3 text-center font-press-start text-[11px] leading-4 text-white disabled:opacity-50"
-        >
-          {isSubmitting ? "PLACING ORDER..." : "PLACE ORDER"}
-        </button>
-      </div>
-    </>
+
+          <div className="mt-4 border-4 border-ink bg-yellow p-4">
+            <Field orientation="vertical">
+              <FieldLabel
+                htmlFor="checkout-payment-mode"
+                className="font-press-start text-[10px] leading-4 text-ink"
+              >
+                PAYMENT MODE (On Delivery Only)
+              </FieldLabel>
+              <FieldContent>
+                <Controller
+                  name="paymentMode"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger
+                        id="checkout-payment-mode"
+                        variant="retro"
+                        className="mt-3 h-auto w-full border-2 bg-white py-2 leading-4"
+                      >
+                        <SelectValue placeholder="Select payment mode" />
+                      </SelectTrigger>
+                      <SelectContent variant="retro">
+                        <SelectItem value="card-on-delivery">Card</SelectItem>
+                        <SelectItem value="cash-on-delivery">Cash</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError
+                  className="font-press-start text-[8px] leading-4 text-red-700"
+                  errors={[form.formState.errors.paymentMode]}
+                />
+              </FieldContent>
+            </Field>
+          </div>
+          <Button
+            type="submit"
+            disabled={items.length === 0 || isSubmitting}
+            variant="retro"
+            className="mt-4 h-auto w-full border-4 bg-magenta px-4 py-3 text-center text-white disabled:opacity-50"
+          >
+            {isSubmitting ? "PLACING ORDER..." : "PLACE ORDER"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };

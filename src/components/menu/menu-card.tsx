@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import type { MenuItemDto } from "@/lib/api/types";
 import { useCart } from "@/lib/cart-store";
 import { cn, formatMenuPriceYen } from "@/lib/utils";
@@ -32,9 +33,10 @@ export default function MenuCard({ card }: { card: MenuItemDto }) {
         <div className="font-press-start text-[11px] leading-4 text-ink sm:text-[12px]">
           {formatMenuPriceYen(card.priceMinor)}
         </div>
-        <button
+        <Button
           type="button"
-          className="cursor-pointer border-3 border-ink bg-yellow px-[10px] py-[8px] font-press-start text-[11px] leading-4 text-ink sm:text-[12px]"
+          variant="retro"
+          className="border-3 border-ink bg-yellow px-[10px] py-[8px] text-[11px] leading-4 sm:text-[12px]"
           onClick={() =>
             addItem({
               id: card.id,
@@ -44,7 +46,7 @@ export default function MenuCard({ card }: { card: MenuItemDto }) {
           }
         >
           ADD +1
-        </button>
+        </Button>
       </div>
     </div>
   );

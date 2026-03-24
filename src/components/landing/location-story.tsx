@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import MaxWidthWrapper from "../max-width-wrapper";
 
 type LocationStoryProps = {
@@ -52,7 +54,10 @@ export const LocationStory = ({
         </div>
         <Link
           href={directionsUrl}
-          className="mt-auto w-fit cursor-pointer border-4 border-ink bg-cyan px-[12px] py-[10px] font-press-start text-[11px] leading-4 text-ink sm:px-[14px] sm:py-3 sm:text-[12px]"
+          className={cn(
+            buttonVariants({ variant: "retro" }),
+            "mt-auto w-fit bg-cyan text-ink no-underline font-press-start text-[10px] sm:text-[11px] md:text-[12px] md:leading-[18px]",
+          )}
         >
           GET DIRECTIONS
         </Link>

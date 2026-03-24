@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { getFeaturedMenuItem } from "@/lib/api/server";
 import { cn } from "@/lib/utils";
 import MaxWidthWrapper from "../max-width-wrapper";
 import MenuCard from "../menu/menu-card";
 
-const CTA_BUTTON_CLASS =
-  "cursor-pointer border-5 border-ink px-4 py-3 font-press-start text-[11px] leading-4 text-ink sm:px-[18px] sm:py-[14px] sm:text-xs md:px-[22px] md:py-[18px] md:text-sm md:leading-[18px]";
+const heroCtaClass =
+  "font-press-start text-[10px] sm:text-[11px] md:text-[12px] md:leading-[18px]";
 
 export const Hero = async () => {
   const featured = await getFeaturedMenuItem();
@@ -37,7 +38,14 @@ export const Hero = async () => {
             arcade-era energy into hand-pulled espresso and electric pour-over
             rituals.
           </p>
-          <Link href="/menu" className={cn(CTA_BUTTON_CLASS, "bg-cyan w-fit")}>
+          <Link
+            href="/menu"
+            className={cn(
+              buttonVariants({ variant: "retro" }),
+              heroCtaClass,
+              "w-fit bg-cyan text-ink no-underline",
+            )}
+          >
             VIEW MENU
           </Link>
         </div>

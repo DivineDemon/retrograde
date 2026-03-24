@@ -5,6 +5,21 @@ import {
   OfferDurationMode,
   OrderStatus,
 } from "@/generated/prisma/enums";
+import {
+  adminLoginBody,
+  adminMenuActivePatchBody,
+  adminMenuFeaturedPatchBody,
+  adminMenuItemCreateBody,
+  adminMenuItemUpdateBody,
+  adminMenuMostPopularPatchBody,
+  adminOfferActivePatchBody,
+  adminOfferCreateBody,
+  adminOfferUpdateBody,
+  adminOrderStatusPatchBody,
+  adminSiteContentPutBody,
+  adminStatsAdjustPatchBody,
+  adminStatsPutBody,
+} from "@/lib/form-schemas";
 import { seedMenuItems } from "@/server/data/bootstrap";
 import { env } from "@/server/env";
 import { prisma } from "@/server/lib/prisma";
@@ -305,10 +320,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       return { authenticated: true };
     },
     {
-      body: t.Object({
-        username: t.String({ minLength: 1 }),
-        password: t.String({ minLength: 1 }),
-      }),
+      body: adminLoginBody,
       response: {
         200: t.Object({ authenticated: t.Boolean() }),
         401: t.Object({ error: t.String() }),
@@ -397,18 +409,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       return status(201, toMenuItemResponse(created));
     },
     {
-      body: t.Object({
-        slug: t.String({ minLength: 1 }),
-        title: t.String({ minLength: 1 }),
-        description: t.String({ minLength: 1 }),
-        priceMinor: t.Integer({ minimum: 0 }),
-        category: t.String(),
-        cardColor: t.Optional(t.String()),
-        titleColor: t.Optional(t.String()),
-        isFeatured: t.Optional(t.Boolean()),
-        isMostPopular: t.Optional(t.Boolean()),
-        isActive: t.Optional(t.Boolean()),
-      }),
+      body: adminMenuItemCreateBody,
       response: {
         201: menuItemResponse,
         400: t.Object({ error: t.String() }),
@@ -462,18 +463,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({
-        slug: t.String({ minLength: 1 }),
-        title: t.String({ minLength: 1 }),
-        description: t.String({ minLength: 1 }),
-        priceMinor: t.Integer({ minimum: 0 }),
-        category: t.String(),
-        cardColor: t.Optional(t.String()),
-        titleColor: t.Optional(t.String()),
-        isFeatured: t.Optional(t.Boolean()),
-        isMostPopular: t.Optional(t.Boolean()),
-        isActive: t.Optional(t.Boolean()),
-      }),
+      body: adminMenuItemUpdateBody,
       response: {
         200: menuItemResponse,
         400: t.Object({ error: t.String() }),
@@ -534,7 +524,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({ isFeatured: t.Boolean() }),
+      body: adminMenuFeaturedPatchBody,
       response: {
         200: menuItemResponse,
         404: t.Object({ error: t.String() }),
@@ -575,9 +565,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       return { items: updated };
     },
     {
-      body: t.Object({
-        menuItemIds: t.Array(t.String(), { maxItems: 3 }),
-      }),
+      body: adminMenuMostPopularPatchBody,
       response: {
         200: t.Object({ items: t.Array(menuItemResponse) }),
         400: t.Object({ error: t.String() }),
@@ -602,7 +590,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({ isActive: t.Boolean() }),
+      body: adminMenuActivePatchBody,
       response: {
         200: menuItemResponse,
         404: t.Object({ error: t.String() }),
@@ -631,12 +619,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       return stats;
     },
     {
-      body: t.Object({
-        dailyCups: t.Integer({ minimum: 0 }),
-        vinylSpins: t.Integer({ minimum: 0 }),
-        arcade: t.Integer({ minimum: 0 }),
-        comboRate: t.Integer({ minimum: 0 }),
-      }),
+      body: adminStatsPutBody,
       response: t.Object({
         id: t.String(),
         dailyCups: t.Integer(),
@@ -668,12 +651,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       return stats;
     },
     {
-      body: t.Object({
-        dailyCupsDelta: t.Integer(),
-        vinylSpinsDelta: t.Integer(),
-        arcadeDelta: t.Integer(),
-        comboRateDelta: t.Integer(),
-      }),
+      body: adminStatsAdjustPatchBody,
       response: statsResponse,
     },
   )
@@ -704,16 +682,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
         },
       }),
     {
-      body: t.Object({
-        mangaSessionLabel: t.String({ minLength: 1 }),
-        mangaSessionHeadline: t.String({ minLength: 1 }),
-        mangaSessionDescription: t.String({ minLength: 1 }),
-        locationLabel: t.String({ minLength: 1 }),
-        locationAddress: t.String({ minLength: 1 }),
-        hoursLineOne: t.String({ minLength: 1 }),
-        hoursLineTwo: t.String({ minLength: 1 }),
-        directionsUrl: t.String({ minLength: 1 }),
-      }),
+      body: adminSiteContentPutBody,
       response: siteContentResponse,
     },
   )
@@ -826,25 +795,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       return status(201, toOfferResponse(created));
     },
     {
-      body: t.Object({
-        name: t.String({ minLength: 1 }),
-        description: t.String({ minLength: 1 }),
-        image: t.Optional(t.String()),
-        durationMode: t.String(),
-        availabilityStart: t.String({ format: "date-time" }),
-        availabilityEnd: t.Optional(t.String({ format: "date-time" })),
-        maxRedemptions: t.Optional(t.Integer({ minimum: 1 })),
-        isActive: t.Boolean({ default: false }),
-        discountType: t.String(),
-        discountValue: t.Integer({ minimum: 0 }),
-        items: t.Array(
-          t.Object({
-            menuItemId: t.String(),
-            quantity: t.Integer({ minimum: 1 }),
-          }),
-          { minItems: 1 },
-        ),
-      }),
+      body: adminOfferCreateBody,
       response: {
         201: limitedOfferResponse,
         400: t.Object({ error: t.String() }),
@@ -959,25 +910,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({
-        name: t.String({ minLength: 1 }),
-        description: t.String({ minLength: 1 }),
-        image: t.Optional(t.String()),
-        durationMode: t.String(),
-        availabilityStart: t.String({ format: "date-time" }),
-        availabilityEnd: t.Optional(t.String({ format: "date-time" })),
-        maxRedemptions: t.Optional(t.Integer({ minimum: 1 })),
-        isActive: t.Boolean(),
-        discountType: t.String(),
-        discountValue: t.Integer({ minimum: 0 }),
-        items: t.Array(
-          t.Object({
-            menuItemId: t.String(),
-            quantity: t.Integer({ minimum: 1 }),
-          }),
-          { minItems: 1 },
-        ),
-      }),
+      body: adminOfferUpdateBody,
       response: {
         200: limitedOfferResponse,
         400: t.Object({ error: t.String() }),
@@ -1015,7 +948,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({ isActive: t.Boolean() }),
+      body: adminOfferActivePatchBody,
       response: {
         200: limitedOfferResponse,
         400: t.Object({ error: t.String() }),
@@ -1096,7 +1029,7 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({ status: t.String() }),
+      body: adminOrderStatusPatchBody,
       response: {
         200: orderResponse,
         400: t.Object({ error: t.String() }),

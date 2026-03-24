@@ -9,6 +9,7 @@ import {
 } from "../../lib/cart-store";
 import { Offer } from "../global/offer";
 import MaxWidthWrapper from "../max-width-wrapper";
+import { Button } from "../ui/button";
 
 type MangaStripProps = {
   offerId?: string;
@@ -74,17 +75,18 @@ export const MangaStrip = ({
             ? `LIMITED OFFER: ${offerName}`
             : "LIMITED OFFER: 8-BIT CARAMEL CRUSH / COMBO SET WITH VINYL PLAYLIST QR"}
         </p>
-        <button
+        <Button
           type="button"
-          className="w-fit shrink-0 cursor-pointer border-4 border-ink bg-white px-[12px] py-[10px] font-press-start text-[11px] leading-4 text-ink sm:px-[14px] sm:py-[12px] sm:text-[12px]"
+          variant="retro"
+          className="w-fit shrink-0 border-4 border-ink bg-white px-[12px] py-[10px] text-[11px] leading-4 sm:px-[14px] sm:py-[12px] sm:text-[12px]"
           onClick={() => setIsOpen(true)}
         >
           VIEW
-        </button>
+        </Button>
       </section>
       <Offer
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        open={isOpen}
+        onOpenChange={setIsOpen}
         onAccept={handleAcceptOffer}
         image={offerImage}
         name={offerName}

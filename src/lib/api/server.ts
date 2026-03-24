@@ -2,6 +2,7 @@ import "server-only";
 
 import { fetchElysia } from "@/lib/api/elysia-internal-fetch";
 import type {
+  GuestOrderSummary,
   MenuItemDto,
   OfferDto,
   SiteContentDto,
@@ -100,5 +101,23 @@ export const getSiteContent = async (): Promise<SiteContentDto> => {
     return data as SiteContentDto;
   } catch {
     return defaultSiteContent;
+  }
+};
+
+export const getGuestOrders = async (
+  guestId: string,
+): Promise<GuestOrderSummary[] | null> => {
+  try {
+    const response = await fetchElysia(
+      `/api/guest/${encodeURIComponent(guestId)}/orders`,
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const data = (await response.json()) as unknown;
+    if (!Array.isArray(data)) return null;
+    return data as GuestOrderSummary[];
+  } catch {
+    return null;
   }
 };
