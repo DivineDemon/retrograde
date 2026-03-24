@@ -20,6 +20,18 @@ export type StatsDto = {
   comboRate: number;
 };
 
+export type SiteContentDto = {
+  id: string;
+  mangaSessionLabel: string;
+  mangaSessionHeadline: string;
+  mangaSessionDescription: string;
+  locationLabel: string;
+  locationAddress: string;
+  hoursLineOne: string;
+  hoursLineTwo: string;
+  directionsUrl: string;
+};
+
 /** Guest order list row from GET /api/guest/:guestId/orders */
 export type GuestOrderSummary = {
   id: string;
@@ -31,6 +43,15 @@ export type GuestOrderSummary = {
   totalMinor: number;
   currency: string;
   limitedOfferId: string | null;
+  items: Array<{
+    id: string;
+    menuItemId: string | null;
+    menuItemSlug: string;
+    menuItemTitle: string;
+    unitPriceMinor: number;
+    quantity: number;
+    lineTotalMinor: number;
+  }>;
 };
 
 export type OfferDto = {

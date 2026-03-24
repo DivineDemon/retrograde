@@ -15,6 +15,11 @@ type ServerEnv = {
   databaseUrl: string;
   apiPort: number;
   adminApiSecret: string;
+  adminUsername: string;
+  adminPassword: string;
+  adminSessionSecret: string;
+  adminSessionCookieName: string;
+  adminSessionTtlSeconds: number;
   corsOrigin: string;
 };
 
@@ -40,10 +45,30 @@ const parseApiPort = (): number => {
   return parsed;
 };
 
+const parseAdminSessionTtlSeconds = (): number => {
+  const rawTtl = process.env.ADMIN_SESSION_TTL_SECONDS;
+  if (!rawTtl) {
+    return 60 * 60 * 8;
+  }
+
+  const parsed = Number.parseInt(rawTtl, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error("ADMIN_SESSION_TTL_SECONDS must be a positive integer");
+  }
+
+  return parsed;
+};
+
 export const env: ServerEnv = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: getRequiredEnv("DATABASE_URL"),
   apiPort: parseApiPort(),
   adminApiSecret: getRequiredEnv("ADMIN_API_SECRET"),
+  adminUsername: getRequiredEnv("ADMIN_USERNAME"),
+  adminPassword: getRequiredEnv("ADMIN_PASSWORD"),
+  adminSessionSecret: getRequiredEnv("ADMIN_SESSION_SECRET"),
+  adminSessionCookieName:
+    process.env.ADMIN_SESSION_COOKIE_NAME?.trim() || "retrograde_admin_session",
+  adminSessionTtlSeconds: parseAdminSessionTtlSeconds(),
   corsOrigin: process.env.FRONTEND_ORIGIN ?? DEFAULT_FRONTEND_ORIGIN,
 };

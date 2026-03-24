@@ -7,6 +7,7 @@ import { guestRoutes } from "@/server/routes/guest";
 import { menuRoutes } from "@/server/routes/menu";
 import { offerRoutes } from "@/server/routes/offers";
 import { orderRoutes } from "@/server/routes/orders";
+import { siteContentRoutes } from "@/server/routes/site-content";
 import { statsRoutes } from "@/server/routes/stats";
 
 import { prismaPlugin } from "./plugins/prisma";
@@ -27,6 +28,7 @@ export const app = new Elysia({ name: "retrograde-api" })
       }))
       .use(menuRoutes)
       .use(statsRoutes)
+      .use(siteContentRoutes)
       .use(offerRoutes)
       .use(guestRoutes)
       .use(orderRoutes)

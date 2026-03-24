@@ -15,6 +15,7 @@ export default function OrdersPage() {
   const [guestError, setGuestError] = useState<string | null>(null);
 
   const [orders, setOrders] = useState<GuestOrderSummary[] | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
 
@@ -88,6 +89,12 @@ export default function OrdersPage() {
     };
   }, [guestId]);
 
+  useEffect(() => {
+    if (!orders?.length) {
+      setExpandedOrderId(null);
+    }
+  }, [orders]);
+
   const showOrdersSkeleton =
     guestId && (ordersLoading || (orders === null && !ordersError));
 
@@ -148,30 +155,73 @@ export default function OrdersPage() {
               key={order.id}
               className="border-4 border-ink bg-white p-3 shadow-retro-sm"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2 font-press-start text-[10px] leading-4 text-ink">
-                <span className="uppercase">
-                  {formatOrderStatus(order.status)}
-                </span>
-                <span>{formatMenuPriceYen(order.totalMinor)}</span>
-              </div>
-              <p className="mt-2 font-press-start text-[8px] leading-4 text-ink opacity-80">
-                {new Date(order.createdAt).toLocaleString(undefined, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </p>
-              <p className="mt-1 font-press-start text-[8px] leading-4 text-ink opacity-70">
-                ID: {order.id}
-              </p>
-              {order.discountMinor > 0 ? (
-                <div className="mt-3 space-y-1 border-t-2 border-dashed border-ink pt-2">
-                  <div className="flex items-center justify-between font-press-start text-[9px] leading-4 text-ink">
-                    <span>SUBTOTAL</span>
-                    <span>{formatMenuPriceYen(order.subtotalMinor)}</span>
-                  </div>
-                  <div className="flex items-center justify-between font-press-start text-[9px] leading-4 text-ink">
-                    <span>DISCOUNT</span>
-                    <span>-{formatMenuPriceYen(order.discountMinor)}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedOrderId((current) =>
+                    current === order.id ? null : order.id,
+                  )
+                }
+                className="w-full text-left"
+                aria-expanded={expandedOrderId === order.id}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2 font-press-start text-[10px] leading-4 text-ink">
+                  <span className="uppercase">
+                    {formatOrderStatus(order.status)}
+                  </span>
+                  <span>{formatMenuPriceYen(order.totalMinor)}</span>
+                </div>
+                <p className="mt-2 font-press-start text-[8px] leading-4 text-ink opacity-80">
+                  {new Date(order.createdAt).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </p>
+                <p className="mt-1 font-press-start text-[8px] leading-4 text-ink opacity-70">
+                  ID: {order.id}
+                </p>
+                <p className="mt-1 font-press-start text-[8px] leading-4 text-ink opacity-70">
+                  {expandedOrderId === order.id
+                    ? "Tap to hide details"
+                    : "Tap to see details"}
+                </p>
+              </button>
+
+              {expandedOrderId === order.id ? (
+                <div className="mt-3 space-y-2 border-t-2 border-dashed border-ink pt-2">
+                  <p className="font-press-start text-[9px] leading-4 text-ink">
+                    ITEMS
+                  </p>
+                  <ul className="space-y-1">
+                    {order.items.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex items-start justify-between gap-2 font-press-start text-[8px] leading-4 text-ink"
+                      >
+                        <span className="max-w-[70%] truncate">
+                          {item.menuItemTitle} x{item.quantity}
+                        </span>
+                        <span>{formatMenuPriceYen(item.lineTotalMinor)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between font-press-start text-[9px] leading-4 text-ink">
+                      <span>SUBTOTAL</span>
+                      <span>{formatMenuPriceYen(order.subtotalMinor)}</span>
+                    </div>
+                    <div className="flex items-center justify-between font-press-start text-[9px] leading-4 text-ink">
+                      <span>DISCOUNT</span>
+                      <span>
+                        {order.discountMinor > 0
+                          ? `-${formatMenuPriceYen(order.discountMinor)}`
+                          : formatMenuPriceYen(0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between font-press-start text-[9px] leading-4 text-ink">
+                      <span>TOTAL</span>
+                      <span>{formatMenuPriceYen(order.totalMinor)}</span>
+                    </div>
                   </div>
                 </div>
               ) : null}

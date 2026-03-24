@@ -9,6 +9,12 @@ Create a `.env` file in the project root.
 ```bash
 DATABASE_URL="postgresql://<user>:<password>@<host>/<db>?sslmode=require"
 ADMIN_API_SECRET="<strong-random-secret>"
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="<strong-password>"
+ADMIN_SESSION_SECRET="<strong-random-session-secret>"
+# Optional overrides:
+# ADMIN_SESSION_COOKIE_NAME="retrograde_admin_session"
+# ADMIN_SESSION_TTL_SECONDS="28800"
 # Origin only (no /api). Eden Treaty appends /api/... from the route tree.
 NEXT_PUBLIC_API_URL="http://localhost:3000"
 # Optional: RSC/server-side fetch base (defaults to http://localhost:3000)
@@ -16,7 +22,7 @@ INTERNAL_API_URL="http://localhost:3000"
 ```
 
 Notes:
-- `DATABASE_URL` and `ADMIN_API_SECRET` are required for order/admin API routes.
+- `DATABASE_URL`, `ADMIN_API_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` are required for order/admin API routes.
 - `NEXT_PUBLIC_API_URL` / `INTERNAL_API_URL` are optional and must be the **origin** (e.g. `http://localhost:3000`), not `.../api`. If you still use `.../api`, it is normalized automatically.
 - In the browser, when unset, the client uses `window.location.origin`.
 - `FRONTEND_ORIGIN` and `API_PORT` are only used by the optional standalone Elysia process (see below).
@@ -100,6 +106,11 @@ curl -i -X PUT http://localhost:3000/api/admin/stats \
   -H "x-admin-secret: ${ADMIN_API_SECRET}" \
   -H 'content-type: application/json' \
   --data '{"dailyCups":1,"vinylSpins":2,"arcade":3,"comboRate":4}'
+
+# session login -> captures cookie
+curl -i -X POST http://localhost:3000/api/admin/auth/login \
+  -H 'content-type: application/json' \
+  --data "{\"username\":\"${ADMIN_USERNAME}\",\"password\":\"${ADMIN_PASSWORD}\"}"
 ```
 
 Expected behavior:
@@ -107,4 +118,4 @@ Expected behavior:
 - `GET /api/menu` returns 200 with an array (possibly empty before seed/sync).
 - `GET /api/stats` returns 200 and creates default singleton row if missing.
 - `GET /api/offers/active` returns 200 when an active offer exists, otherwise 404.
-- Admin endpoints reject missing/invalid `x-admin-secret` with 401/403.
+- Admin endpoints accept either `x-admin-secret` or a valid admin session cookie.

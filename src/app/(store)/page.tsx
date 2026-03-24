@@ -3,12 +3,15 @@ import { LocationStory } from "@/components/landing/location-story";
 import { MangaStrip } from "@/components/landing/manga-strip";
 import { MenuCards } from "@/components/landing/menu-cards";
 import { StatsMarquee } from "@/components/landing/stats-marquee";
-import { getActiveOffer } from "@/lib/api/server";
+import { getActiveOffer, getSiteContent } from "@/lib/api/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const activeOffer = await getActiveOffer();
+  const [activeOffer, siteContent] = await Promise.all([
+    getActiveOffer(),
+    getSiteContent(),
+  ]);
 
   return (
     <div className="relative w-full min-h-screen flex flex-col items-start justify-start">
@@ -29,7 +32,16 @@ export default async function Home() {
       />
       <MenuCards />
       <StatsMarquee />
-      <LocationStory />
+      <LocationStory
+        mangaSessionLabel={siteContent.mangaSessionLabel}
+        mangaSessionHeadline={siteContent.mangaSessionHeadline}
+        mangaSessionDescription={siteContent.mangaSessionDescription}
+        locationLabel={siteContent.locationLabel}
+        locationAddress={siteContent.locationAddress}
+        hoursLineOne={siteContent.hoursLineOne}
+        hoursLineTwo={siteContent.hoursLineTwo}
+        directionsUrl={siteContent.directionsUrl}
+      />
     </div>
   );
 }

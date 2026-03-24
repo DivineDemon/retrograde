@@ -19,6 +19,17 @@ const guestOrderSummary = t.Object({
   totalMinor: t.Integer(),
   currency: t.String(),
   limitedOfferId: t.Nullable(t.String()),
+  items: t.Array(
+    t.Object({
+      id: t.String(),
+      menuItemId: t.Nullable(t.String()),
+      menuItemSlug: t.String(),
+      menuItemTitle: t.String(),
+      unitPriceMinor: t.Integer(),
+      quantity: t.Integer(),
+      lineTotalMinor: t.Integer(),
+    }),
+  ),
 });
 
 export const guestRoutes = new Elysia({ prefix: "/guest" })
@@ -29,15 +40,8 @@ export const guestRoutes = new Elysia({ prefix: "/guest" })
         where: { guestId: params.guestId },
         orderBy: { createdAt: "desc" },
         take: 20,
-        select: {
-          id: true,
-          status: true,
-          createdAt: true,
-          subtotalMinor: true,
-          discountMinor: true,
-          totalMinor: true,
-          currency: true,
-          limitedOfferId: true,
+        include: {
+          items: true,
         },
       });
 
@@ -50,6 +54,15 @@ export const guestRoutes = new Elysia({ prefix: "/guest" })
         totalMinor: order.totalMinor,
         currency: order.currency,
         limitedOfferId: order.limitedOfferId,
+        items: order.items.map((item) => ({
+          id: item.id,
+          menuItemId: item.menuItemId,
+          menuItemSlug: item.menuItemSlug,
+          menuItemTitle: item.menuItemTitle,
+          unitPriceMinor: item.unitPriceMinor,
+          quantity: item.quantity,
+          lineTotalMinor: item.lineTotalMinor,
+        })),
       }));
     },
     {

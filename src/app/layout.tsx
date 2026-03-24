@@ -8,8 +8,6 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { Footer } from "@/components/global/footer";
-import { Header } from "@/components/global/header";
 import { CartProvider } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
 import "sonner/dist/styles.css";
@@ -70,9 +68,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <CartProvider>
-          <Header />
           {children}
-          <Footer />
           <Toaster richColors closeButton />
         </CartProvider>
       </body>

@@ -1,7 +1,11 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { DiscountType, MenuCategory } from "../src/generated/prisma/enums";
+import {
+  DiscountType,
+  MenuCategory,
+  OfferDurationMode,
+} from "../src/generated/prisma/enums";
 import { seedMenuItems, seedStats } from "../src/server/data/bootstrap";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -91,6 +95,35 @@ const main = async () => {
     },
   });
 
+  await prisma.siteContent.upsert({
+    where: { id: "singleton" },
+    update: {
+      mangaSessionLabel: "MANGA NIGHT SESSIONS / FRI + SAT",
+      mangaSessionHeadline: "DRAW. DRINK.\nREPEAT.",
+      mangaSessionDescription:
+        "Live ink artists, city-pop DJs, and all-night espresso labs. Bring your sketchbook and claim your booth.",
+      locationLabel: "RETROGRADE HQ",
+      locationAddress: "5 L, Block L Gulberg 2, Lahore, 54660, Pakistan",
+      hoursLineOne: "08:00AM-12:00AM",
+      hoursLineTwo: "DAILY, NO EXCEPTIONS",
+      directionsUrl:
+        "https://www.google.com/maps/place/Retrograde+Coffee+-+Gulberg/@31.5200515,74.3463278,17z/data=!3m1!4b1!4m6!3m5!1s0x3919055116e42c0d:0xfed728ebcf47be89!8m2!3d31.520047!4d74.3489027!16s%2Fg%2F11n3kztsrs?entry=ttu&g_ep=EgoyMDI2MDMxOC4xIKXMDSoASAFQAw%3D%3D",
+    },
+    create: {
+      id: "singleton",
+      mangaSessionLabel: "MANGA NIGHT SESSIONS / FRI + SAT",
+      mangaSessionHeadline: "DRAW. DRINK.\nREPEAT.",
+      mangaSessionDescription:
+        "Live ink artists, city-pop DJs, and all-night espresso labs. Bring your sketchbook and claim your booth.",
+      locationLabel: "RETROGRADE HQ",
+      locationAddress: "5 L, Block L Gulberg 2, Lahore, 54660, Pakistan",
+      hoursLineOne: "08:00AM-12:00AM",
+      hoursLineTwo: "DAILY, NO EXCEPTIONS",
+      directionsUrl:
+        "https://www.google.com/maps/place/Retrograde+Coffee+-+Gulberg/@31.5200515,74.3463278,17z/data=!3m1!4b1!4m6!3m5!1s0x3919055116e42c0d:0xfed728ebcf47be89!8m2!3d31.520047!4d74.3489027!16s%2Fg%2F11n3kztsrs?entry=ttu&g_ep=EgoyMDI2MDMxOC4xIKXMDSoASAFQAw%3D%3D",
+    },
+  });
+
   await prisma.limitedOffer.updateMany({
     where: { isActive: true },
     data: { isActive: false },
@@ -129,8 +162,11 @@ const main = async () => {
       description:
         "Unlock the limited combo: Pixel Cheesecake + Cassette Latte.",
       image: "/landing/limited-drop.png",
+      durationMode: OfferDurationMode.TIME,
       availabilityStart: new Date("2026-01-01T00:00:00.000Z"),
       availabilityEnd: null,
+      maxRedemptions: null,
+      redemptionsUsed: 0,
       isActive: true,
       discountType: DiscountType.PERCENTAGE,
       discountValue: 15,
