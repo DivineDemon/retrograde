@@ -67,7 +67,7 @@ export const Offer = ({
             className="h-auto w-full border-4 border-ink"
             priority
           />
-          <div className="absolute bottom-0 left-0 right-0 flex flex-col md:flex-row w-full gap-2.5 md:gap-0 items-center justify-between bg-ink/50 p-5 text-white">
+          <div className="absolute bottom-0 left-0 right-0 flex w-full items-center justify-between bg-ink/50 p-2.5 md:p-5 text-white">
             <div className="flex w-full flex-1 flex-col items-center justify-between gap-1">
               <p className="w-full text-left font-press-start text-[10px] md:text-xs mb-1">
                 {name ?? "LIMITED DROP"}
@@ -78,7 +78,7 @@ export const Offer = ({
                       key={item.menuItemId}
                       className="w-full text-left font-press-start text-[10px] md:text-xs"
                     >
-                      - {item.title} x{item.quantity}
+                      - {item.quantity} {item.title}
                     </p>
                   ))
                 : null}
