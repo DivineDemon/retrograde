@@ -22,32 +22,28 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { AdminMenuItemCreateBody } from "@/lib/form-schemas";
 import { formatMenuPriceYen } from "@/lib/utils";
+import { AdminConfirmDeleteDialog } from "./admin-confirm-delete-dialog";
 import {
   MENU_CATEGORIES,
   type MenuItem,
   parseError,
 } from "./admin-dashboard-types";
+import { AdminMenuEditDialog } from "./admin-menu-edit-dialog";
 
 type AdminMenuSectionProps = {
   menu: UseFormReturn<AdminMenuItemCreateBody>;
   menuItems: MenuItem[];
-  editingMenuId: string | null;
-  setEditingMenuId: (id: string | null) => void;
   onSubmitMenu: (e?: BaseSyntheticEvent) => Promise<void>;
   isMutating: boolean;
   performAction: (action: () => Promise<void>) => Promise<void>;
-  emptyMenuValues: () => AdminMenuItemCreateBody;
 };
 
 export function AdminMenuSection({
   menu,
   menuItems,
-  editingMenuId,
-  setEditingMenuId,
   onSubmitMenu,
   isMutating,
   performAction,
-  emptyMenuValues,
 }: AdminMenuSectionProps) {
   return (
     <section className="grid gap-3 border-4 border-ink bg-white p-4 shadow-retro-sm">
@@ -249,21 +245,8 @@ export function AdminMenuSection({
             disabled={isMutating}
             className="border-4 bg-yellow px-3 py-2 font-press-start text-[9px] leading-4 text-ink disabled:opacity-60"
           >
-            {editingMenuId ? "UPDATE MENU ITEM" : "CREATE MENU ITEM"}
+            CREATE MENU ITEM
           </Button>
-          {editingMenuId ? (
-            <Button
-              type="button"
-              variant="retro"
-              onClick={() => {
-                setEditingMenuId(null);
-                menu.reset(emptyMenuValues());
-              }}
-              className="border-4 bg-cyan px-3 py-2 font-press-start text-[9px] leading-4 text-ink"
-            >
-              CANCEL EDIT
-            </Button>
-          ) : null}
         </div>
       </form>
 
@@ -285,33 +268,16 @@ export function AdminMenuSection({
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="retro"
-                onClick={() => {
-                  setEditingMenuId(item.id);
-                  menu.reset({
-                    slug: item.slug,
-                    title: item.title,
-                    description: item.description,
-                    priceMinor: item.priceMinor,
-                    category: item.category,
-                    cardColor: item.cardColor ?? "",
-                    titleColor: item.titleColor ?? "",
-                    isFeatured: item.isFeatured,
-                    isMostPopular: item.isMostPopular,
-                    isActive: item.isActive,
-                  });
-                }}
-                className="h-auto border-2 bg-white px-2 py-1 text-[8px] leading-4 text-ink"
-              >
-                EDIT
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() =>
-                  void performAction(async () => {
+              <AdminMenuEditDialog
+                menuItemId={item.id}
+                disabled={isMutating}
+                performAction={performAction}
+              />
+              <AdminConfirmDeleteDialog
+                itemLabel={`menu item "${item.title}"`}
+                disabled={isMutating}
+                onConfirm={() =>
+                  performAction(async () => {
                     const response = await fetch(
                       `/api/admin/menu/${encodeURIComponent(item.id)}`,
                       { method: "DELETE", credentials: "include" },
@@ -326,10 +292,7 @@ export function AdminMenuSection({
                     }
                   })
                 }
-                className="h-auto border-2 border-ink bg-red-100 px-2 py-1 text-[8px] leading-4 text-red-800"
-              >
-                DELETE
-              </Button>
+              />
             </div>
           </div>
         ))}

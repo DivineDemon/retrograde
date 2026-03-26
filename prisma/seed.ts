@@ -161,7 +161,7 @@ const main = async () => {
       name: "Retro Double Drop",
       description:
         "Unlock the limited combo: Pixel Cheesecake + Cassette Latte.",
-      image: "/landing/limited-drop.png",
+      image: "https://i.ibb.co/Dfr1DSGX/limited-drop.png",
       durationMode: OfferDurationMode.TIME,
       availabilityStart: new Date("2026-01-01T00:00:00.000Z"),
       availabilityEnd: null,

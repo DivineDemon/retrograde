@@ -1,6 +1,7 @@
 "use client";
 
-import type { BaseSyntheticEvent } from "react";
+import Image from "next/image";
+import { type BaseSyntheticEvent, type ChangeEvent, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -19,33 +20,82 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
 import type { AdminOfferFormDraft } from "@/lib/form-schemas";
+import { uploadImageToImgbb } from "@/lib/utils";
+import { AdminConfirmDeleteDialog } from "./admin-confirm-delete-dialog";
 import { type Offer, parseError } from "./admin-dashboard-types";
+import { AdminOfferEditDialog } from "./admin-offer-edit-dialog";
 
 type AdminOffersSectionProps = {
   offerDraft: UseFormReturn<AdminOfferFormDraft>;
   offers: Offer[];
   activeOfferId: string | null;
-  editingOfferId: string | null;
-  setEditingOfferId: (id: string | null) => void;
   onSubmitOffer: (e?: BaseSyntheticEvent) => Promise<void>;
   isMutating: boolean;
   performAction: (action: () => Promise<void>) => Promise<void>;
-  emptyOfferDraftValues: () => AdminOfferFormDraft;
 };
 
 export function AdminOffersSection({
   offerDraft,
   offers,
   activeOfferId,
-  editingOfferId,
-  setEditingOfferId,
   onSubmitOffer,
   isMutating,
   performAction,
-  emptyOfferDraftValues,
 }: AdminOffersSectionProps) {
+  const imagePreviewUrl = offerDraft.watch("image")?.trim() ?? "";
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only PNG and JPG images are allowed.");
+      event.target.value = "";
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          if (typeof result !== "string") {
+            reject(new Error("Could not read selected image."));
+            return;
+          }
+          const [, encoded = ""] = result.split(",");
+          resolve(encoded);
+        };
+        reader.onerror = () =>
+          reject(new Error("Could not read selected image."));
+        reader.readAsDataURL(file);
+      });
+
+      const response = await uploadImageToImgbb({ imageBase64: base64 });
+      const uploadedUrl = response.data.url.trim();
+
+      offerDraft.setValue("image", uploadedUrl, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+      toast.success("Image uploaded.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Image upload failed.";
+      toast.error(message);
+    } finally {
+      setIsUploadingImage(false);
+      event.target.value = "";
+    }
+  };
+
   return (
     <section className="grid gap-3 border-4 border-ink bg-white p-4 shadow-retro-sm">
       <h2 className="font-press-start text-[11px] leading-5 text-ink">
@@ -56,6 +106,41 @@ export function AdminOffersSection({
         onSubmit={(e) => void onSubmitOffer(e)}
         noValidate
       >
+        <Field className="md:col-span-2">
+          <FieldLabel className="font-press-start text-[8px] leading-4 text-ink">
+            Offer image (PNG/JPG)
+          </FieldLabel>
+          <FieldContent>
+            <Input
+              type="file"
+              accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+              multiple={false}
+              variant="retro"
+              className="font-press-start file:border-r p-0 file:h-9 file:pr-2 text-[9px] leading-4 file:mr-4 file:font-press-start file:text-[8px]"
+              onChange={(event) => void handleImageUpload(event)}
+              disabled={isMutating || isUploadingImage}
+            />
+            <FieldError
+              className="font-press-start text-[8px] leading-4 text-red-700"
+              errors={[offerDraft.formState.errors.image]}
+            />
+          </FieldContent>
+        </Field>
+        {imagePreviewUrl ? (
+          <div className="md:col-span-2 w-full flex flex-col items-center justify-center">
+            <p className="mb-1 font-press-start text-[8px] leading-4 text-ink/80">
+              Image preview
+            </p>
+            <Image
+              src={imagePreviewUrl}
+              alt="Offer preview"
+              width={96}
+              height={96}
+              unoptimized
+              className="h-24 w-24 border-2 border-ink object-cover"
+            />
+          </div>
+        ) : null}
         <Field>
           <FieldLabel className="sr-only">Name</FieldLabel>
           <FieldContent>
@@ -68,21 +153,6 @@ export function AdminOffersSection({
             <FieldError
               className="font-press-start text-[8px] leading-4 text-red-700"
               errors={[offerDraft.formState.errors.name]}
-            />
-          </FieldContent>
-        </Field>
-        <Field>
-          <FieldLabel className="sr-only">Image URL</FieldLabel>
-          <FieldContent>
-            <Input
-              placeholder="Image URL (optional)"
-              {...offerDraft.register("image")}
-              variant="retro"
-              className="font-press-start text-[9px] leading-4"
-            />
-            <FieldError
-              className="font-press-start text-[8px] leading-4 text-red-700"
-              errors={[offerDraft.formState.errors.image]}
             />
           </FieldContent>
         </Field>
@@ -261,24 +331,11 @@ export function AdminOffersSection({
           <Button
             type="submit"
             variant="retro"
-            disabled={isMutating}
+            disabled={isMutating || isUploadingImage}
             className="border-4 bg-yellow px-3 py-2 font-press-start text-[9px] leading-4 text-ink disabled:opacity-60"
           >
-            {editingOfferId ? "UPDATE OFFER" : "CREATE OFFER"}
+            CREATE OFFER
           </Button>
-          {editingOfferId ? (
-            <Button
-              type="button"
-              variant="retro"
-              onClick={() => {
-                setEditingOfferId(null);
-                offerDraft.reset(emptyOfferDraftValues());
-              }}
-              className="border-4 bg-cyan px-3 py-2 font-press-start text-[9px] leading-4 text-ink"
-            >
-              CANCEL EDIT
-            </Button>
-          ) : null}
         </div>
       </form>
 
@@ -299,44 +356,16 @@ export function AdminOffersSection({
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="retro"
-                onClick={() => {
-                  setEditingOfferId(offer.id);
-                  offerDraft.reset({
-                    name: offer.name,
-                    description: offer.description,
-                    image: offer.image ?? "",
-                    durationMode: offer.durationMode,
-                    availabilityStart: new Date(offer.availabilityStart)
-                      .toISOString()
-                      .slice(0, 16),
-                    availabilityEnd: offer.availabilityEnd
-                      ? new Date(offer.availabilityEnd)
-                          .toISOString()
-                          .slice(0, 16)
-                      : "",
-                    maxRedemptions: offer.maxRedemptions
-                      ? String(offer.maxRedemptions)
-                      : "",
-                    isActive: offer.isActive,
-                    discountType: offer.discountType,
-                    discountValue: offer.discountValue,
-                    items: offer.items
-                      .map((item) => `${item.menuItemId}:${item.quantity}`)
-                      .join(","),
-                  });
-                }}
-                className="h-auto border-2 bg-white px-2 py-1 text-[8px] leading-4 text-ink"
-              >
-                EDIT
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() =>
-                  void performAction(async () => {
+              <AdminOfferEditDialog
+                offerId={offer.id}
+                disabled={isMutating}
+                performAction={performAction}
+              />
+              <AdminConfirmDeleteDialog
+                itemLabel={`offer "${offer.name}"`}
+                disabled={isMutating}
+                onConfirm={() =>
+                  performAction(async () => {
                     const response = await fetch(
                       `/api/admin/offers/${encodeURIComponent(offer.id)}`,
                       { method: "DELETE", credentials: "include" },
@@ -348,10 +377,7 @@ export function AdminOffersSection({
                     }
                   })
                 }
-                className="h-auto border-2 border-ink bg-red-100 px-2 py-1 text-[8px] leading-4 text-red-800"
-              >
-                DELETE
-              </Button>
+              />
             </div>
           </div>
         ))}

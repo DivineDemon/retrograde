@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatMenuPriceYen } from "@/lib/utils";
+import { AdminConfirmDeleteDialog } from "./admin-confirm-delete-dialog";
 import {
   ORDER_STATUSES,
   type Order,
@@ -24,6 +25,7 @@ type AdminOrdersSectionProps = {
   setExpandedOrderId: Dispatch<SetStateAction<string | null>>;
   loadAllData: (statusFilter?: string) => Promise<void>;
   performAction: (action: () => Promise<void>) => Promise<void>;
+  isMutating: boolean;
 };
 
 export function AdminOrdersSection({
@@ -34,6 +36,7 @@ export function AdminOrdersSection({
   setExpandedOrderId,
   loadAllData,
   performAction,
+  isMutating,
 }: AdminOrdersSectionProps) {
   return (
     <section className="grid gap-3 border-4 border-ink bg-white p-4 shadow-retro-sm">
@@ -73,10 +76,17 @@ export function AdminOrdersSection({
           APPLY FILTER
         </Button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {orders.map((order) => (
-          <div key={order.id} className="border-2 border-ink bg-canvas p-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div
+            key={order.id}
+            className="grid gap-3 border-2 border-ink bg-canvas p-3 md:grid-cols-[1fr_auto]"
+          >
+            <div className="space-y-1">
+              <p className="font-press-start text-[9px] leading-4 text-ink">
+                {order.id} - {order.status} -{" "}
+                {formatMenuPriceYen(order.totalMinor)}
+              </p>
               <Button
                 type="button"
                 variant="retro"
@@ -86,16 +96,12 @@ export function AdminOrdersSection({
                   )
                 }
                 aria-expanded={expandedOrderId === order.id}
-                className="h-auto min-h-0 w-full max-w-full flex-1 justify-start border-0 bg-transparent px-0 py-0 text-left font-press-start text-[9px] leading-4 text-ink shadow-none hover:translate-x-0 hover:translate-y-0 hover:bg-transparent sm:w-auto sm:flex-initial"
+                className="h-auto border-2 bg-white px-2 py-1 text-[8px] leading-4 text-ink"
               >
-                {order.id} - {order.status} -{" "}
-                {formatMenuPriceYen(order.totalMinor)}
-                <span className="ml-2 text-[8px] text-ink/70">
-                  {expandedOrderId === order.id
-                    ? "(hide details)"
-                    : "(show details)"}
-                </span>
+                {expandedOrderId === order.id ? "HIDE DETAILS" : "SHOW DETAILS"}
               </Button>
+            </div>
+            <div className="justify-self-start md:justify-self-end">
               <Select
                 value={order.status}
                 onValueChange={(status) => {
@@ -124,7 +130,7 @@ export function AdminOrdersSection({
                 <SelectTrigger
                   variant="retro"
                   size="sm"
-                  className="h-auto font-press-start text-[8px] leading-4"
+                  className="h-auto min-w-36 font-press-start text-[8px] leading-4"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -137,12 +143,12 @@ export function AdminOrdersSection({
                 </SelectContent>
               </Select>
             </div>
-            <p className="mt-1 font-press-start text-[8px] leading-4 text-ink/70">
+            <p className="font-press-start text-[8px] leading-4 text-ink/70 md:col-span-2">
               {order.customerName} | {order.customerPhone} |{" "}
               {order.streetAddress}, {order.city}
             </p>
             {expandedOrderId === order.id ? (
-              <div className="mt-2 space-y-2 border-t border-dashed border-ink pt-2">
+              <div className="space-y-2 border-t border-dashed border-ink pt-2 md:col-span-2">
                 <p className="font-press-start text-[8px] leading-4 text-ink">
                   ITEMS
                 </p>
@@ -175,7 +181,7 @@ export function AdminOrdersSection({
                 </div>
               </div>
             ) : null}
-            <div className="mt-2 flex gap-2">
+            <div className="flex gap-2 md:col-span-2">
               <Button
                 type="button"
                 variant="retro"
@@ -196,11 +202,11 @@ export function AdminOrdersSection({
               >
                 CANCEL
               </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() =>
-                  void performAction(async () => {
+              <AdminConfirmDeleteDialog
+                itemLabel={`order "${order.id}"`}
+                disabled={isMutating}
+                onConfirm={() =>
+                  performAction(async () => {
                     const response = await fetch(
                       `/api/admin/orders/${encodeURIComponent(order.id)}`,
                       { method: "DELETE", credentials: "include" },
@@ -212,10 +218,7 @@ export function AdminOrdersSection({
                     }
                   })
                 }
-                className="h-auto border-2 border-ink bg-red-100 px-2 py-1 text-[8px] leading-4 text-red-800"
-              >
-                DELETE
-              </Button>
+              />
             </div>
           </div>
         ))}

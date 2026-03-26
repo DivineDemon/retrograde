@@ -374,6 +374,25 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       response: t.Array(menuItemResponse),
     },
   )
+  .get(
+    "/menu/:id",
+    async ({ params, status }) => {
+      const item = await prisma.menuItem.findUnique({
+        where: { id: params.id },
+      });
+      if (!item) {
+        return status(404, { error: "Menu item not found" });
+      }
+      return toMenuItemResponse(item);
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: {
+        200: menuItemResponse,
+        404: t.Object({ error: t.String() }),
+      },
+    },
+  )
   .post(
     "/menu",
     async ({ body, status }) => {
@@ -697,6 +716,26 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
     },
     {
       response: t.Array(limitedOfferResponse),
+    },
+  )
+  .get(
+    "/offers/:id",
+    async ({ params, status }) => {
+      const offer = await prisma.limitedOffer.findUnique({
+        where: { id: params.id },
+        include: { items: true },
+      });
+      if (!offer) {
+        return status(404, { error: "Limited offer not found" });
+      }
+      return toOfferResponse(offer);
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: {
+        200: limitedOfferResponse,
+        404: t.Object({ error: t.String() }),
+      },
     },
   )
   .post(

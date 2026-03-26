@@ -60,7 +60,7 @@ export const Offer = ({
             <X className="size-full" />
           </Button>
           <Image
-            src={image ?? "/landing/limited-drop.png"}
+            src={image ?? "https://i.ibb.co/Dfr1DSGX/limited-drop.png"}
             alt={name ? `${name} poster` : "Limited drop promo poster"}
             width={800}
             height={800}

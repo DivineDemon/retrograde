@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type AdminMenuItemCreateBody,
   type AdminOfferFormDraft,
@@ -47,10 +49,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [_siteContent, setSiteContent] = useState<SiteContent | null>(null);
 
-  const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
-  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>("");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "menu" | "offers" | "orders" | "stats" | "site"
+  >("menu");
 
   const menu = useForm<AdminMenuItemCreateBody>({
     resolver: typeboxResolver(adminMenuItemCreateBody),
@@ -83,7 +86,6 @@ export default function AdminDashboard() {
     defaultValues: emptySiteContentValues(),
   });
 
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
 
   const activeOfferId = useMemo(
@@ -152,9 +154,10 @@ export default function AdminDashboard() {
         directionsUrl: siteData.directionsUrl,
       });
     } catch (error) {
-      setGlobalError(
-        error instanceof Error ? error.message : "Failed to load dashboard.",
-      );
+      const message =
+        error instanceof Error ? error.message : "Failed to load dashboard.";
+      setGlobalError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -189,31 +192,41 @@ export default function AdminDashboard() {
     };
   }, [router]);
 
-  const performAction = async (action: () => Promise<void>) => {
+  const performAction = async (
+    action: () => Promise<void>,
+    options?: { successMessage?: string; errorMessage?: string },
+  ) => {
     if (isMutating) return;
     setIsMutating(true);
-    setActionMessage(null);
     setGlobalError(null);
 
     try {
       await action();
       await loadAllData();
-      setActionMessage("Saved.");
+      toast.success(options?.successMessage ?? "Saved successfully.");
     } catch (error) {
-      setGlobalError(
-        error instanceof Error ? error.message : "Action failed. Please retry.",
-      );
+      const message =
+        error instanceof Error
+          ? error.message
+          : (options?.errorMessage ?? "Action failed. Please retry.");
+      setGlobalError(message);
+      toast.error(message);
     } finally {
       setIsMutating(false);
     }
   };
 
   const logout = async () => {
-    await fetch("/api/admin/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    router.replace("/admin/login");
+    try {
+      await fetch("/api/admin/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      toast.success("Logged out.");
+      router.replace("/admin/login");
+    } catch {
+      toast.error("Could not log out. Please try again.");
+    }
   };
 
   const onSubmitMenu = menu.handleSubmit(async (values) => {
@@ -231,13 +244,8 @@ export default function AdminDashboard() {
         isActive: values.isActive ?? true,
       };
 
-      const endpoint = editingMenuId
-        ? `/api/admin/menu/${encodeURIComponent(editingMenuId)}`
-        : "/api/admin/menu";
-      const method = editingMenuId ? "PUT" : "POST";
-
-      const response = await fetch(endpoint, {
-        method,
+      const response = await fetch("/api/admin/menu", {
+        method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -249,7 +257,6 @@ export default function AdminDashboard() {
       }
 
       menu.reset(emptyMenuValues());
-      setEditingMenuId(null);
     });
   });
 
@@ -286,13 +293,8 @@ export default function AdminDashboard() {
         items,
       };
 
-      const endpoint = editingOfferId
-        ? `/api/admin/offers/${encodeURIComponent(editingOfferId)}`
-        : "/api/admin/offers";
-      const method = editingOfferId ? "PUT" : "POST";
-
-      const response = await fetch(endpoint, {
-        method,
+      const response = await fetch("/api/admin/offers", {
+        method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -302,7 +304,6 @@ export default function AdminDashboard() {
       }
 
       offerDraft.reset(emptyOfferDraftValues());
-      setEditingOfferId(null);
     });
   });
 
@@ -391,64 +392,80 @@ export default function AdminDashboard() {
           Refreshing...
         </p>
       ) : null}
-      {actionMessage ? (
-        <p className="border-2 border-ink bg-green-100 px-2 py-2 font-press-start text-[9px] leading-4 text-green-800">
-          {actionMessage}
-        </p>
-      ) : null}
       {globalError ? (
         <p className="border-2 border-ink bg-red-100 px-2 py-2 font-press-start text-[9px] leading-4 text-red-800">
           {globalError}
         </p>
       ) : null}
 
-      <AdminMenuSection
-        menu={menu}
-        menuItems={menuItems}
-        editingMenuId={editingMenuId}
-        setEditingMenuId={setEditingMenuId}
-        onSubmitMenu={onSubmitMenu}
-        isMutating={isMutating}
-        performAction={performAction}
-        emptyMenuValues={emptyMenuValues}
-      />
+      <Tabs
+        value={activeTab}
+        onValueChange={(tab) =>
+          setActiveTab(tab as "menu" | "offers" | "orders" | "stats" | "site")
+        }
+        className="space-y-4"
+      >
+        <TabsList className="w-full border-4 border-ink bg-white p-3 shadow-retro-sm">
+          <TabsTrigger value="menu">MENU</TabsTrigger>
+          <TabsTrigger value="offers">OFFERS</TabsTrigger>
+          <TabsTrigger value="orders">ORDERS</TabsTrigger>
+          <TabsTrigger value="stats">STATS</TabsTrigger>
+          <TabsTrigger value="site">SITE</TabsTrigger>
+        </TabsList>
 
-      <AdminOffersSection
-        offerDraft={offerDraft}
-        offers={offers}
-        activeOfferId={activeOfferId}
-        editingOfferId={editingOfferId}
-        setEditingOfferId={setEditingOfferId}
-        onSubmitOffer={onSubmitOffer}
-        isMutating={isMutating}
-        performAction={performAction}
-        emptyOfferDraftValues={emptyOfferDraftValues}
-      />
+        <TabsContent value="menu">
+          <AdminMenuSection
+            menu={menu}
+            menuItems={menuItems}
+            onSubmitMenu={onSubmitMenu}
+            isMutating={isMutating}
+            performAction={performAction}
+          />
+        </TabsContent>
 
-      <AdminOrdersSection
-        orderStatusFilter={orderStatusFilter}
-        setOrderStatusFilter={setOrderStatusFilter}
-        orders={orders}
-        expandedOrderId={expandedOrderId}
-        setExpandedOrderId={setExpandedOrderId}
-        loadAllData={loadAllData}
-        performAction={performAction}
-      />
+        <TabsContent value="offers">
+          <AdminOffersSection
+            offerDraft={offerDraft}
+            offers={offers}
+            activeOfferId={activeOfferId}
+            onSubmitOffer={onSubmitOffer}
+            isMutating={isMutating}
+            performAction={performAction}
+          />
+        </TabsContent>
 
-      <AdminStatsSection
-        stats={stats}
-        statsPut={statsPut}
-        statsAdjust={statsAdjust}
-        onSubmitStatsPut={onSubmitStatsPut}
-        onSubmitStatsAdjust={onSubmitStatsAdjust}
-        isMutating={isMutating}
-      />
+        <TabsContent value="orders">
+          <AdminOrdersSection
+            orderStatusFilter={orderStatusFilter}
+            setOrderStatusFilter={setOrderStatusFilter}
+            orders={orders}
+            expandedOrderId={expandedOrderId}
+            setExpandedOrderId={setExpandedOrderId}
+            loadAllData={loadAllData}
+            performAction={performAction}
+            isMutating={isMutating}
+          />
+        </TabsContent>
 
-      <AdminSiteSection
-        siteContent={siteContent}
-        onSubmitSiteContent={onSubmitSiteContent}
-        isMutating={isMutating}
-      />
+        <TabsContent value="stats">
+          <AdminStatsSection
+            stats={stats}
+            statsPut={statsPut}
+            statsAdjust={statsAdjust}
+            onSubmitStatsPut={onSubmitStatsPut}
+            onSubmitStatsAdjust={onSubmitStatsAdjust}
+            isMutating={isMutating}
+          />
+        </TabsContent>
+
+        <TabsContent value="site">
+          <AdminSiteSection
+            siteContent={siteContent}
+            onSubmitSiteContent={onSubmitSiteContent}
+            isMutating={isMutating}
+          />
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }

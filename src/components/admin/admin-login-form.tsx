@@ -12,6 +12,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/sonner";
 import { type AdminLoginBody, adminLoginBody } from "@/lib/form-schemas";
 
 export function AdminLoginForm() {
@@ -72,13 +73,18 @@ export function AdminLoginForm() {
         const payload = (await response.json().catch(() => null)) as {
           error?: string;
         } | null;
-        setServerError(payload?.error ?? "Login failed. Please try again.");
+        const message = payload?.error ?? "Login failed. Please try again.";
+        setServerError(message);
+        toast.error(message);
         return;
       }
 
+      toast.success("Signed in successfully.");
       router.replace("/admin");
     } catch {
-      setServerError("Login failed. Please try again.");
+      const message = "Login failed. Please try again.";
+      setServerError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

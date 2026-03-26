@@ -7,7 +7,7 @@ import {
   Press_Start_2P,
 } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
 import "sonner/dist/styles.css";
